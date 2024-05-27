@@ -1,0 +1,8 @@
+<Defs>
+  <KeyBindingDef>
+    <defName>OpenChatBox</defName>
+    <label>Open Chat Box</label>
+    <category>MainTab</category>
+    <defaultKey>A</defaultKey>
+  </KeyBindingDef>
+</Defs>

@@ -12,7 +12,7 @@ namespace LivingRim
     {
         private static bool Prefix(MainTabWindow_Inspect __instance, Rect rect)
         {
-            if (Widgets.ButtonText(new Rect(rect.x, rect.y, 200f, 30f), "Talk"))
+            if (Widgets.ButtonText(new Rect(rect.x, rect.y, 200f, 30f), "Talk") || KeyBindingDefOf.OpenChatBox.JustPressed)
             {
                 Find.WindowStack.Add(new Dialog_Input("Enter your message:", "Send", async text =>
                 {

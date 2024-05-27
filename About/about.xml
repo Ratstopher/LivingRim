@@ -2,5 +2,9 @@
   <name>LivingRim</name>
   <author>Ratstopher</author>
   <description>A RimWorld mod that integrates a language model to enhance gameplay.</description>
-  <version>1.0.0</version>
+  <supportedVersions>
+    <li>1.5</li>
+    <li>1.4</li>
+  </supportedVersions>
+  <packageId>Ratstopher.LivingRim</packageId>
 </ModMetaData>

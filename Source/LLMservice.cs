@@ -15,36 +15,26 @@ namespace LivingRim
             selectedApi = api;
         }
 
-        public static async Task<string> GetResponseFromLLM(string prompt)
+        public static async Task<string> GetResponseFromLLM(string prompt, string characterId)
         {
             var config = LoadConfig("Mods/LivingRim/api/config.json");
             var apiConfig = config.Apis[selectedApi];
             var detailedPrompt = $"Character context: {prompt}";
 
             string requestContent = $"{{\"prompt\": \"{detailedPrompt}\", \"max_tokens\": {apiConfig.MaxTokens}, \"temperature\": {apiConfig.Temperature}}}";
-            string url = "";
+            string url = selectedApi == "openrouter" ? "https://api.openrouter.com/v1/completions" : selectedApi == "openai" ? $"https://api.openai.com/v1/engines/{apiConfig.Model}/completions" : "https://api.cohere.ai/generate";
 
-            if (selectedApi == "openrouter")
-            {
-                url = "https://api.openrouter.com/v1/completions";
-                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiConfig.ApiKey}");
-            }
-            else if (selectedApi == "openai")
-            {
-                url = "https://api.openai.com/v1/engines/" + apiConfig.Model + "/completions";
-                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiConfig.ApiKey}");
-            }
-            else if (selectedApi == "cohere")
-            {
-                url = "https://api.cohere.ai/generate";
-                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiConfig.ApiKey}");
-            }
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiConfig.ApiKey}");
 
             var response = await client.PostAsync(url, new StringContent(requestContent, Encoding.UTF8, "application/json"));
             var responseContent = await response.Content.ReadAsStringAsync();
 
             var jsonResponse = JObject.Parse(responseContent);
-            return jsonResponse["choices"][0]["text"].ToString();
+            var responseText = jsonResponse["choices"][0]["text"].ToString();
+
+            CharacterContext.AddInteraction(characterId, responseText);
+
+            return responseText;
         }
 
         private static Config LoadConfig(string filePath)

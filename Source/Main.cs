@@ -8,7 +8,7 @@ namespace LivingRim
     {
         static Main()
         {
-            var harmony = new Harmony("com.yourname.rimworldmod");
+            var harmony = new Harmony("com.LivingRim.rimworldmod");
             harmony.PatchAll();
         }
     }

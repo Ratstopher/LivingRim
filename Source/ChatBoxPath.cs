@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using HarmonyLib;
 using RimWorld;
 using UnityEngine;
@@ -5,48 +7,21 @@ using Verse;
 
 namespace LivingRim
 {
-    [HarmonyPatch(typeof(MainTabWindow_Inspect), "DoWindowContents")]
-    public static class ChatBoxPatch
+    [HarmonyPatch(typeof(MainTabWindow_Inspect), "DoInspectPaneButtons")]
+    public static class ChatBoxPath
     {
-        private static string playerInput = "";
-        private static string characterResponse = "";
-        private static Pawn selectedPawn;
-
-        public static void Postfix(MainTabWindow_Inspect __instance, Rect inRect)
+        private static bool Prefix(MainTabWindow_Inspect __instance, Rect rect)
         {
-            if (Find.Selector.SingleSelectedThing is Pawn pawn)
+            if (Widgets.ButtonText(new Rect(rect.x, rect.y, 200f, 30f), "Talk"))
             {
-                selectedPawn = pawn;
+                Find.WindowStack.Add(new Dialog_Input("Enter your message:", "Send", async text =>
+                {
+                    // Call the LLMService to get a response
+                    string response = await LLMService.GetResponseFromLLM(text, "characterId"); // Replace with actual characterId
+                    Messages.Message(response, MessageTypeDefOf.NeutralEvent, false);
+                }));
             }
-
-            var chatBoxRect = new Rect(inRect.x + 10, inRect.y + 10, inRect.width - 20, 100);
-            var inputRect = new Rect(inRect.x + 10, inRect.y + 120, inRect.width - 20, 30);
-
-            Widgets.Label(chatBoxRect, "Character: " + characterResponse);
-            playerInput = Widgets.TextField(inputRect, playerInput);
-
-            if (Widgets.ButtonText(new Rect(inRect.x + 10, inRect.y + 160, inRect.width - 20, 30), "Send"))
-            {
-                SendPlayerInput(playerInput);
-                playerInput = "";
-            }
-        }
-
-        private static async void SendPlayerInput(string input)
-        {
-            if (selectedPawn != null)
-            {
-                var context = CharacterContext.GetCharacterContext(selectedPawn);
-                characterResponse = await LLMService.GetResponseFromLLM(input);
-                StoreContext(selectedPawn.ThingID, input, characterResponse);
-            }
-        }
-
-        private static void StoreContext(string characterId, string playerInput, string characterResponse)
-        {
-            var context = new { CharacterId = characterId, PlayerInput = playerInput, CharacterResponse = characterResponse };
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(context);
-            System.IO.File.WriteAllText($"Mods/LivingRim/api/context_{characterId}.json", json);
+            return true;
         }
     }
 }

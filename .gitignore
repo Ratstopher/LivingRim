@@ -7,6 +7,7 @@
 .vs/
 *.user
 *.suo
+*.env
 
 # Ignore temporary files
 *.tmp
@@ -14,3 +15,31 @@
 
 # Ignore Rider specific directories
 .idea/
+
+# Ignore Node.js modules and other environment files
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Ignore environment-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore compiled output files
+*.dll
+*.exe
+*.so
+*.dylib
+*.pdb
+
+# Ignore coverage files
+coverage/
+*.lcov
+
+# Ignore build artifacts
+build/
+dist/
+tmp/
+temp/

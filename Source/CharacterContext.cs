@@ -16,14 +16,19 @@ namespace LivingRim
 
         public static List<CharacterContext> LoadContexts()
         {
+            Log.Message("Attempting to load contexts.");
             if (!File.Exists(contextFilePath))
             {
+                Log.Message("Context file not found. Returning empty list.");
                 return new List<CharacterContext>();
             }
 
             var json = File.ReadAllText(contextFilePath);
+            Log.Message($"Raw JSON content: {json}");
             var jsonReader = new JsonReader();
-            return jsonReader.Read<List<CharacterContext>>(json) ?? new List<CharacterContext>();
+            var contexts = jsonReader.Read<List<CharacterContext>>(json) ?? new List<CharacterContext>();
+            Log.Message($"Loaded {contexts.Count} contexts.");
+            return contexts;
         }
 
         public static void SaveContexts(List<CharacterContext> contexts)
@@ -31,6 +36,7 @@ namespace LivingRim
             var jsonWriter = new JsonWriter();
             var json = jsonWriter.Write(contexts);
             File.WriteAllText(contextFilePath, json);
+            Log.Message("Contexts saved successfully.");
         }
 
         public static CharacterContext GetOrCreateContext(string characterId)
@@ -42,6 +48,7 @@ namespace LivingRim
                 context = new CharacterContext { CharacterId = characterId };
                 contexts.Add(context);
                 SaveContexts(contexts);
+                Log.Message($"Created new context for Character ID: {characterId}");
             }
             return context;
         }
@@ -52,35 +59,7 @@ namespace LivingRim
             var context = GetOrCreateContext(characterId);
             context.Interactions.Add(interaction);
             SaveContexts(contexts);
-        }
-
-        public string Name { get; set; }
-        public string Mood { get; set; }
-        public string Health { get; set; }
-        public string Personality { get; set; }
-        public string Relationships { get; set; }
-
-        public static CharacterContext GetCharacterContext(Pawn pawn)
-        {
-            return new CharacterContext
-            {
-                CharacterId = pawn.ThingID.ToString(),
-                Name = pawn.Name.ToStringShort,
-                Mood = pawn.needs.mood.CurLevel.ToString(),
-                Health = pawn.health.summaryHealth.SummaryHealthPercent.ToString(),
-                Personality = GetPersonalityTraits(pawn),
-                Relationships = GetRelationships(pawn)
-            };
-        }
-
-        private static string GetPersonalityTraits(Pawn pawn)
-        {
-            return string.Join(", ", pawn.story.traits.allTraits.Select(t => t.LabelCap));
-        }
-
-        private static string GetRelationships(Pawn pawn)
-        {
-            return string.Join(", ", pawn.relations.DirectRelations.Select(r => r.def.defName));
+            Log.Message($"Added interaction for Character ID: {characterId}");
         }
     }
 }

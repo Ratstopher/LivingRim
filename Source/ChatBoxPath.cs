@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using HarmonyLib;
 using RimWorld;
 using UnityEngine;
@@ -12,14 +11,35 @@ namespace LivingRim
     {
         private static bool Prefix(MainTabWindow_Inspect __instance, Rect rect)
         {
-            if (Widgets.ButtonText(new Rect(rect.x, rect.y, 200f, 30f), "Talk") || KeyBindingDefOf.OpenChatBox.JustPressed)
+            float buttonWidth = 200f;
+            float buttonHeight = 30f;
+            float buttonX = rect.x + rect.width - buttonWidth - 10f; // Adjusted position to the right
+            float buttonY = rect.y + rect.height - buttonHeight - 10f; // Adjusted position to the bottom
+
+            if (Widgets.ButtonText(new Rect(buttonX, buttonY, buttonWidth, buttonHeight), "Talk"))
             {
-                Find.WindowStack.Add(new Dialog_Input("Enter your message:", "Send", async text =>
+                var selectedThing = Find.Selector.SingleSelectedThing;
+                if (selectedThing is Pawn pawn)
                 {
-                    // Call the LLMService to get a response
-                    string response = await LLMService.GetResponseFromLLM(text, "characterId"); // Replace with actual characterId
-                    Messages.Message(response, MessageTypeDefOf.NeutralEvent, false);
-                }));
+                    string characterId = pawn.ThingID.ToString(); // Ensure characterId is defined here
+
+                    Dialog_Input dialog = null;
+                    dialog = new Dialog_Input("Enter your message:", "Send", text =>
+                    {
+                        LLMService.GetResponseFromLLM(text, characterId, response =>
+                        {
+                            dialog.SetResponseText(response);
+
+                            // Add chat bubble
+                            MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, response);
+                        });
+                    });
+                    Find.WindowStack.Add(dialog);
+                }
+                else
+                {
+                    Log.Error("No pawn selected for conversation.");
+                }
             }
             return true;
         }

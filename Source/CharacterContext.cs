@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
+using JsonFx.Json;
 using Verse;
 
 namespace LivingRim
@@ -22,12 +22,14 @@ namespace LivingRim
             }
 
             var json = File.ReadAllText(contextFilePath);
-            return JsonConvert.DeserializeObject<List<CharacterContext>>(json) ?? new List<CharacterContext>();
+            var jsonReader = new JsonReader();
+            return jsonReader.Read<List<CharacterContext>>(json) ?? new List<CharacterContext>();
         }
 
         public static void SaveContexts(List<CharacterContext> contexts)
         {
-            var json = JsonConvert.SerializeObject(contexts, Formatting.Indented);
+            var jsonWriter = new JsonWriter();
+            var json = jsonWriter.Write(contexts);
             File.WriteAllText(contextFilePath, json);
         }
 
@@ -39,6 +41,7 @@ namespace LivingRim
             {
                 context = new CharacterContext { CharacterId = characterId };
                 contexts.Add(context);
+                SaveContexts(contexts);
             }
             return context;
         }

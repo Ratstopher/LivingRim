@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
+    <RimWorldPath>D:\Games\Steam\steamapps\common\RimWorld</RimWorldPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="JsonFX" Version="2.0.1209.2802" />
     <PackageReference Include="Lib.Harmony" Version="2.3.3" />
   </ItemGroup>
 
@@ -31,13 +32,12 @@
     <Reference Include="UnityEngine.TextRenderingModule">
       <HintPath>$(RimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestModule">
+      <HintPath>$(RimWorldPath)\RimWorldWin64_Data\Managed\UnityEngine.UnityWebRequestModule.dll</HintPath>
+    </Reference>
     <Reference Include="0Harmony">
-      <HintPath>..\..\..\RimWorldWin64_Data\Managed\0Harmony.dll</HintPath>
+      <HintPath>$(RimWorldPath)\RimWorldWin64_Data\Managed\0Harmony.dll</HintPath>
     </Reference>
   </ItemGroup>
-
-  <PropertyGroup>
-    <RimWorldPath>D:\Games\Steam\steamapps\common\RimWorld</RimWorldPath>
-  </PropertyGroup>
 
 </Project>

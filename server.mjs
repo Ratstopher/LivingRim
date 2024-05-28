@@ -18,14 +18,13 @@ app.post('/api/v1/chat/completions', async (req, res) => {
 
     // Use the API key from environment variable
     const apiKey = process.env.OPENROUTER_API_KEY;
-    console.log('Using API Key:', apiKey);  // Add this line for debugging
 
     const requestBody = {
-        model: 'openai/gpt-3.5-turbo',
+        model: 'mistralai/mistral-7b-instruct:free',
         messages: interactions.map(content => ({ role: 'user', content }))
     };
 
-    console.log('Request Body:', requestBody);
+    console.log('Request Body:', JSON.stringify(requestBody, null, 2));
 
     try {
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -38,14 +37,14 @@ app.post('/api/v1/chat/completions', async (req, res) => {
         });
 
         const data = await response.json();
-        console.log('Response from API:', data);
+        console.log('Response from API:', JSON.stringify(data, null, 2));
 
         if (!response.ok) {
             console.error(`API request failed with status ${response.status}:`, data);
             return res.status(response.status).json({ error: data });
         }
 
-        res.json({ response: data.choices[0].text });
+        res.json({ response: data.choices[0].message.content });
     } catch (error) {
         console.error('Error making API request:', error);
         res.status(500).json({ error: 'Internal Server Error' });

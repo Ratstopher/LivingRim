@@ -46,3 +46,6 @@ build/
 dist/
 tmp/
 temp/
+/chat_log.db
+/chat_log.db
+/chat_log.txt

@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using JsonFx.Json;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 using Verse;
@@ -19,10 +19,28 @@ namespace LivingRim
                 Log.Message("Entered GetResponseFromLLM method");
                 Log.Message($"Prompt: {prompt}, Character ID: {characterId}");
 
+                var pawn = Find.Selector.SingleSelectedThing as Pawn;
+                if (pawn == null)
+                {
+                    Log.Error("No pawn selected or selected thing is not a pawn.");
+                    callback("No pawn selected.");
+                    return;
+                }
+
+                var characterContext = CharacterContext.GetCharacterContext(pawn);
+
                 var requestBody = new
                 {
-                    characterId = characterId,
-                    interactions = new List<string> { prompt }
+                    characterId = characterContext.CharacterId,
+                    interactions = new List<string> { prompt },
+                    details = new
+                    {
+                        name = characterContext.Name,
+                        mood = characterContext.Mood,
+                        health = characterContext.Health,
+                        personality = characterContext.Personality,
+                        relationships = characterContext.Relationships
+                    }
                 };
 
                 var jsonWriter = new JsonFx.Json.JsonWriter();
@@ -45,6 +63,11 @@ namespace LivingRim
             }
         }
 
+        internal static void GetResponseFromLLM(string text, string characterId, Action<string> value, object details)
+        {
+            throw new NotImplementedException();
+        }
+
         private static IEnumerator SendRequest(string url, string requestContent, Action<string> callback, string characterId)
         {
             Log.Message("Entered SendRequest coroutine");
@@ -52,7 +75,7 @@ namespace LivingRim
 
             var webRequest = new UnityWebRequest(url, "POST")
             {
-                uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(requestContent)),
+                uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(requestContent)),
                 downloadHandler = new DownloadHandlerBuffer()
             };
             webRequest.SetRequestHeader("Content-Type", "application/json");

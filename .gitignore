@@ -13,6 +13,9 @@
 *.tmp
 *.log
 
+# Ignore chat log file
+chat_log.txt
+
 # Ignore Rider specific directories
 .idea/
 

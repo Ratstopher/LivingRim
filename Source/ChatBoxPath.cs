@@ -29,8 +29,8 @@ namespace LivingRim
                         {
                             dialog.SetResponseText(response);
 
-                            // Add chat bubble
-                            MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, response);
+                            // Add chat bubble with extended duration
+                            ThrowExtendedText(pawn.DrawPos, pawn.Map, response, 10f); // Display for 10 seconds
                         });
                     });
                     Find.WindowStack.Add(dialog);
@@ -41,6 +41,16 @@ namespace LivingRim
                 }
             }
             return true;
+        }
+
+        private static void ThrowExtendedText(Vector3 loc, Map map, string text, float duration)
+        {
+            MoteText moteText = (MoteText)ThingMaker.MakeThing(ThingDefOf.Mote_Text, null);
+            moteText.exactPosition = loc;
+            moteText.text = text;
+            moteText.textColor = Color.white;
+            moteText.def.mote.solidTime = duration;
+            GenSpawn.Spawn(moteText, loc.ToIntVec3(), map);
         }
     }
 }

@@ -5,7 +5,8 @@ using System.Linq;
 using JsonFx.Json;
 using Verse;
 using RimWorld;
-using UnityEngine;
+
+
 
 namespace LivingRim
 {
@@ -87,18 +88,37 @@ namespace LivingRim
             return pawn?.Name?.ToStringShort ?? "Unknown";
         }
 
-        public static object GetCharacterDetails(string characterId)
+        public static CharacterDetails GetCharacterDetails(string characterId)
         {
-            var pawn = Find.CurrentMap.mapPawns.AllPawns.FirstOrDefault(p => p.ThingID.ToString() == characterId);
-            return new
+            Log.Message($"Attempting to get details for Character ID: {characterId}");
+            var pawn = Find.CurrentMap?.mapPawns?.AllPawns?.FirstOrDefault(p => p.ThingID.ToString() == characterId);
+
+            if (pawn == null)
             {
-                name = pawn?.Name?.ToStringShort,
-                mood = pawn?.needs?.mood?.CurLevel.ToString(),
-                health = pawn?.health?.summaryHealth?.SummaryHealthPercent.ToString(),
+                Log.Error($"Pawn with Character ID {characterId} not found or null map.");
+                return new CharacterDetails
+                {
+                    name = "Unknown",
+                    mood = "Unknown",
+                    health = "Unknown",
+                    personality = "None",
+                    relationships = "None",
+                    environment = "Unknown",
+                    needs = "None",
+                    backstory = "Unknown"
+                };
+            }
+
+            return new CharacterDetails
+            {
+                name = pawn.Name?.ToStringShort ?? "Unknown",
+                mood = pawn.needs?.mood?.CurLevel.ToString() ?? "Unknown",
+                health = pawn.health?.summaryHealth?.SummaryHealthPercent.ToString() ?? "Unknown",
                 personality = GetPersonalityTraits(pawn),
                 relationships = GetRelationships(pawn),
                 environment = GetEnvironmentDetails(pawn),
-                needs = GetAllNeeds(pawn)
+                needs = GetAllNeeds(pawn),
+                backstory = GetPawnBackstory(characterId)
             };
         }
 
@@ -114,6 +134,11 @@ namespace LivingRim
 
         private static string GetEnvironmentDetails(Pawn pawn)
         {
+            if (pawn == null || pawn.Map == null)
+            {
+                return "Unknown";
+            }
+
             var map = pawn.Map;
             var room = pawn.GetRoom(RegionType.Set_All);
             var temperature = map.mapTemperature.OutdoorTemp.ToString("F1");
@@ -133,6 +158,18 @@ namespace LivingRim
 
             var needsList = pawn.needs.AllNeeds.Select(n => $"{n.LabelCap}: {n.CurLevelPercentage.ToString("P0")}");
             return string.Join(", ", needsList);
+        }
+
+        public static string GetPawnBackstory(string characterId)
+        {
+            var pawn = Find.CurrentMap.mapPawns.AllPawns.FirstOrDefault(p => p.ThingID.ToString() == characterId);
+            if (pawn != null)
+            {
+                var childhood = pawn.story.Childhood?.title ?? "Unknown Childhood";
+                var adulthood = pawn.story.Adulthood?.title ?? "Unknown Adulthood";
+                return $"Childhood: {childhood}, Adulthood: {adulthood}";
+            }
+            return "Unknown Backstory";
         }
     }
 }

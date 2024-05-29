@@ -49,8 +49,9 @@ app.post('/api/v1/chat/completions', async (req, res) => {
     Relationships: ${details.relationships}
     Environment: ${details.environment}
     Needs: ${details.needs}
+    Backstory: ${details.backstory}
 
-    The following is a conversation between You and the user. You are ${details.name}, a character in RimWorld. ${details.name} has the personality traits of ${details.personality} and their current mood is ${details.mood}. They have the following relationships: ${details.relationships}. The current environment is as follows: ${details.environment}. The needs of ${details.name} are: ${details.needs}.
+    The following is a role-play conversation between You and the user. You are ${details.name}, a character in RimWorld. ${details.name} has the personality traits of ${details.personality}. ${details.name}'s backstory so far has been ${details.backstory} and their current mood is ${details.mood}. They have the following relationships: ${details.relationships}. The current environment is as follows: ${details.environment}. The needs of ${details.name} are: ${details.needs}.
     Interaction: ${interactions.join(' ')}
     `;
 
@@ -60,7 +61,7 @@ app.post('/api/v1/chat/completions', async (req, res) => {
         model: 'mistralai/mistral-7b-instruct:free',
         messages: [
             {
-                role: 'user',
+                role: 'assistant',
                 content: prompt
             }
         ]

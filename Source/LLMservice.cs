@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using UnityEngine.Networking;
 
 namespace LivingRim
@@ -17,11 +16,20 @@ namespace LivingRim
                 Log.Message("Entered GetResponseFromLLM method");
                 Log.Message($"Prompt: {prompt}, Character ID: {characterId}");
 
+                CharacterDetails details = CharacterContext.GetCharacterDetails(characterId);
+
+                if (details.name == "Unknown")
+                {
+                    Log.Error($"Character details for ID {characterId} are unknown.");
+                    callback("Error: Character not found.");
+                    return;
+                }
+
                 var requestBody = new
                 {
                     characterId = characterId,
                     interactions = new List<string> { prompt },
-                    details = CharacterContext.GetCharacterDetails(characterId)
+                    details = details
                 };
 
                 var jsonWriter = new JsonFx.Json.JsonWriter();

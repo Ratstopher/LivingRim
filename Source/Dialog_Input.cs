@@ -16,6 +16,12 @@ namespace LivingRim
         private bool isResizing;
         private Vector2 lastMousePos;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Dialog_Input"/> class.
+        /// </summary>
+        /// <param name="pawnName">The name of the pawn being chatted with.</param>
+        /// <param name="confirmButtonText">The text for the confirm button.</param>
+        /// <param name="onConfirm">The action to perform when the confirm button is clicked.</param>
         public Dialog_Input(string pawnName, string confirmButtonText, Action<string> onConfirm)
         {
             this.pawnName = pawnName;
@@ -29,8 +35,15 @@ namespace LivingRim
             this.resizeable = true;
         }
 
+        /// <summary>
+        /// Gets the initial size of the window.
+        /// </summary>
         public override Vector2 InitialSize => new Vector2(500f, 300f);
 
+        /// <summary>
+        /// Draws the window contents.
+        /// </summary>
+        /// <param name="inRect">The rectangle in which to draw the contents.</param>
         public override void DoWindowContents(Rect inRect)
         {
             float num = inRect.y;
@@ -67,6 +80,10 @@ namespace LivingRim
             HandleResizing(inRect);
         }
 
+        /// <summary>
+        /// Handles the resizing of the window.
+        /// </summary>
+        /// <param name="inRect">The rectangle of the window.</param>
         private void HandleResizing(Rect inRect)
         {
             Rect resizeHandle = new Rect(windowRect.width - 20f, windowRect.height - 20f, 20f, 20f);
@@ -97,6 +114,10 @@ namespace LivingRim
             }
         }
 
+        /// <summary>
+        /// Sets the response text to be displayed in the dialog.
+        /// </summary>
+        /// <param name="response">The response text.</param>
         public void SetResponseText(string response)
         {
             responseText = response;

@@ -14,6 +14,12 @@ namespace LivingRim
         private Vector2 lastMousePos;
         private Vector2 scrollPosition;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Dialog_DraggableResizableInput"/> class.
+        /// </summary>
+        /// <param name="label">The label to display in the dialog.</param>
+        /// <param name="confirmButtonText">The text for the confirm button.</param>
+        /// <param name="onConfirm">The action to perform when the confirm button is clicked.</param>
         public Dialog_DraggableResizableInput(string label, string confirmButtonText, Action<string> onConfirm)
         {
             this.label = label;
@@ -25,8 +31,15 @@ namespace LivingRim
             this.resizeable = true;
         }
 
+        /// <summary>
+        /// Gets the initial size of the window.
+        /// </summary>
         public override Vector2 InitialSize => new Vector2(400f, 400f);
 
+        /// <summary>
+        /// Draws the window contents.
+        /// </summary>
+        /// <param name="inRect">The rectangle in which to draw the contents.</param>
         public override void DoWindowContents(Rect inRect)
         {
             float num = inRect.y;
@@ -52,9 +65,16 @@ namespace LivingRim
             HandleResizing(inRect);
         }
 
+        /// <summary>
+        /// Handles the resizing of the window.
+        /// </summary>
+        /// <param name="inRect">The rectangle of the window.</param>
         private void HandleResizing(Rect inRect)
         {
-            if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && Mouse.IsOver(inRect))
+            Rect resizeHandle = new Rect(windowRect.width - 20f, windowRect.height - 20f, 20f, 20f);
+            GUI.DrawTexture(resizeHandle, BaseContent.WhiteTex);
+
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && Mouse.IsOver(resizeHandle))
             {
                 isResizing = true;
                 lastMousePos = Event.current.mousePosition;
@@ -79,6 +99,10 @@ namespace LivingRim
             }
         }
 
+        /// <summary>
+        /// Sets the response text to be displayed in the dialog.
+        /// </summary>
+        /// <param name="response">The response text.</param>
         public void SetResponseText(string response)
         {
             responseText = response;

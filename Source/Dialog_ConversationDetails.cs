@@ -13,6 +13,14 @@ namespace LivingRim
         private string timestamp;
         private Vector2 scrollPosition = Vector2.zero;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Dialog_ConversationDetails"/> class.
+        /// </summary>
+        /// <param name="characterId">The ID of the character.</param>
+        /// <param name="characterName">The name of the character.</param>
+        /// <param name="interaction">The player's interaction message.</param>
+        /// <param name="response">The character's response message.</param>
+        /// <param name="timestamp">The timestamp of the interaction.</param>
         public Dialog_ConversationDetails(string characterId, string characterName, string interaction, string response, string timestamp)
         {
             this.characterId = characterId;
@@ -23,8 +31,15 @@ namespace LivingRim
             this.doCloseX = true;  // Add close button
         }
 
+        /// <summary>
+        /// Gets the initial size of the window.
+        /// </summary>
         public override Vector2 InitialSize => new Vector2(600f, 400f);
 
+        /// <summary>
+        /// Draws the window contents.
+        /// </summary>
+        /// <param name="inRect">The rectangle in which to draw the contents.</param>
         public override void DoWindowContents(Rect inRect)
         {
             float num = inRect.y;

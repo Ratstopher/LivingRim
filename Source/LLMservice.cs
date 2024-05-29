@@ -1,12 +1,19 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace LivingRim
 {
     public class LLMService
     {
+        /// <summary>
+        /// Gets a response from the LLM based on the provided prompt and character ID.
+        /// </summary>
+        /// <param name="prompt">The user's input prompt.</param>
+        /// <param name="characterId">The ID of the character.</param>
+        /// <param name="callback">The callback to handle the response.</param>
         public static void GetResponseFromLLM(string prompt, string characterId, Action<string> callback)
         {
             string requestContent = null;
@@ -52,6 +59,15 @@ namespace LivingRim
             }
         }
 
+        /// <summary>
+        /// Sends a request to the LLM API.
+        /// </summary>
+        /// <param name="url">The URL of the LLM API.</param>
+        /// <param name="requestContent">The request content in JSON format.</param>
+        /// <param name="callback">The callback to handle the response.</param>
+        /// <param name="characterId">The ID of the character.</param>
+        /// <param name="prompt">The user's input prompt.</param>
+        /// <returns>An IEnumerator for coroutine handling.</returns>
         private static IEnumerator SendRequest(string url, string requestContent, Action<string> callback, string characterId, string prompt)
         {
             Log.Message("Entered SendRequest coroutine");
@@ -109,11 +125,19 @@ namespace LivingRim
 
     public static class Log
     {
+        /// <summary>
+        /// Logs an error message.
+        /// </summary>
+        /// <param name="message">The error message.</param>
         public static void Error(string message)
         {
             Verse.Log.Error(message);
         }
 
+        /// <summary>
+        /// Logs a general message.
+        /// </summary>
+        /// <param name="message">The message to log.</param>
         public static void Message(string message)
         {
             Verse.Log.Message(message);

@@ -1,10 +1,11 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import fetch from 'node-fetch';
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
+import Database from 'better-sqlite3';
 import path from 'path';
 import dotenv from 'dotenv';
+import chalk from 'chalk';
+import figlet from 'figlet';
 
 dotenv.config();
 
@@ -18,26 +19,26 @@ app.use(bodyParser.json());
 let db;
 
 (async () => {
-    db = await open({
-        filename: DB_PATH,
-        driver: sqlite3.Database
-    });
-
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS chat_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            CharacterId TEXT,
-            Name TEXT,
-            Interaction TEXT,
-            Content TEXT,
-            Timestamp TEXT
-        )
-    `);
-    console.log('Database initialized and chat_log table created');
+    try {
+        db = new Database(DB_PATH);
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS chat_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                CharacterId TEXT,
+                Name TEXT,
+                Interaction TEXT,
+                Content TEXT,
+                Timestamp TEXT
+            )
+        `);
+        console.log(chalk.green('Database initialized and chat_log table created'));
+    } catch (error) {
+        console.error(chalk.red('Failed to initialize database:', error));
+    }
 })();
 
 app.post('/api/v1/chat/completions', async (req, res) => {
-    console.log('Received request:', req.body);
+    console.log(chalk.blue('Received request:'), req.body);
 
     const { characterId, interactions, details } = req.body;
 
@@ -61,13 +62,13 @@ app.post('/api/v1/chat/completions', async (req, res) => {
         model: 'mistralai/mistral-7b-instruct:free',
         messages: [
             {
-                role: 'assistant',
+                role: 'user',
                 content: prompt
             }
         ]
     };
 
-    console.log('Request Body:', requestBody);
+    console.log(chalk.magenta('Request Body:'), requestBody);
 
     try {
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -80,48 +81,67 @@ app.post('/api/v1/chat/completions', async (req, res) => {
         });
 
         const data = await response.json();
-        console.log('Response from API:', data);
+        console.log(chalk.green('Response from API:'), data);
 
         if (!response.ok) {
-            console.error(`API request failed with status ${response.status}:`, data);
+            console.error(chalk.red(`API request failed with status ${response.status}:`), data);
             return res.status(response.status).json({ error: data });
         }
 
         const responseText = data.choices[0].message.content;
-        await logInteractionToDb(characterId, details.name, interactions.join(' '), responseText);
+        logInteractionToDb(characterId, details.name, interactions.join(' '), responseText);
 
         res.json({ response: responseText });
     } catch (error) {
-        console.error('Error making API request:', error);
+        console.error(chalk.red('Error making API request:', error));
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-const logInteractionToDb = async (characterId, name, interaction, content) => {
+/**
+ * Logs the interaction to the database.
+ * @param {string} characterId - The ID of the character.
+ * @param {string} name - The name of the character.
+ * @param {string} interaction - The player's interaction message.
+ * @param {string} content - The character's response message.
+ */
+const logInteractionToDb = (characterId, name, interaction, content) => {
     const timestamp = new Date().toISOString();
-    console.log(`Logging interaction to database: ${characterId}, ${name}, ${interaction}, ${content}, ${timestamp}`);
+    console.log(chalk.yellow(`Logging interaction to database: ${characterId}, ${name}, ${interaction}, ${content}, ${timestamp}`));
     try {
-        const result = await db.run(
-            'INSERT INTO chat_log (CharacterId, Name, Interaction, Content, Timestamp) VALUES (?, ?, ?, ?, ?)',
-            characterId, name, interaction, content, timestamp
-        );
-        console.log('Interaction logged to database', result);
+        const stmt = db.prepare('INSERT INTO chat_log (CharacterId, Name, Interaction, Content, Timestamp) VALUES (?, ?, ?, ?, ?)');
+        const result = stmt.run(characterId, name, interaction, content, timestamp);
+        console.log(chalk.green('Interaction logged to database'), result);
     } catch (err) {
-        console.error('Error logging interaction to database:', err);
+        console.error(chalk.red('Error logging interaction to database:', err));
     }
 };
 
 // New endpoint to fetch logs
 app.get('/api/v1/chat/logs', async (req, res) => {
     try {
-        const logs = await db.all('SELECT * FROM chat_log ORDER BY Timestamp DESC');
+        const logs = db.prepare('SELECT * FROM chat_log ORDER BY Timestamp DESC').all();
         res.json(logs);
     } catch (err) {
-        console.error('Error fetching logs:', err);
+        console.error(chalk.red('Error fetching logs:', err));
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    figlet.text('LIVING RIM', {
+        font: 'Slant', // Change to your desired font
+        horizontalLayout: 'default',
+        verticalLayout: 'default',
+        width: 80,
+        whitespaceBreak: true
+    }, (err, data) => {
+        if (err) {
+            console.error('Error generating ASCII art:', err);
+            return;
+        }
+        console.log(chalk.green(data));
+        console.log(chalk.hex('#FFA500')('Powered by rats!')); // Light orange color
+        console.log(chalk.cyan(`Server is running on http://localhost:${PORT}`));
+    });
 });

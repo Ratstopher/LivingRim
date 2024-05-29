@@ -15,6 +15,9 @@ namespace LivingRim
         private List<ChatLogEntry> chatLogEntries = new List<ChatLogEntry>();
         private bool isLoading = false;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MainTabWindow_ChatLog"/> class.
+        /// </summary>
         public MainTabWindow_ChatLog()
         {
             this.closeOnAccept = false;
@@ -23,8 +26,15 @@ namespace LivingRim
             this.doCloseX = true;
         }
 
+        /// <summary>
+        /// Gets the size of the tab window.
+        /// </summary>
         public override Vector2 RequestedTabSize => new Vector2(600f, 800f);
 
+        /// <summary>
+        /// Draws the window contents.
+        /// </summary>
+        /// <param name="inRect">The rectangle in which to draw the contents.</param>
         public override void DoWindowContents(Rect inRect)
         {
             if (!chatLogEntries.Any() && !isLoading)
@@ -45,6 +55,12 @@ namespace LivingRim
             Widgets.EndScrollView();
         }
 
+        /// <summary>
+        /// Draws a chat log entry.
+        /// </summary>
+        /// <param name="entry">The chat log entry to draw.</param>
+        /// <param name="y">The y-coordinate to start drawing at.</param>
+        /// <param name="width">The width of the entry.</param>
         private void DrawEntry(ChatLogEntry entry, ref float y, float width)
         {
             Rect rect = new Rect(0f, y, width, 30f);
@@ -55,11 +71,18 @@ namespace LivingRim
             y += rect.height + 10f;
         }
 
+        /// <summary>
+        /// Fetches the chat logs from the server.
+        /// </summary>
         private void FetchChatLogs()
         {
             CoroutineHelper.Instance.StartCoroutine(GetChatLogsFromServer());
         }
 
+        /// <summary>
+        /// Coroutine to get chat logs from the server.
+        /// </summary>
+        /// <returns>An IEnumerator for coroutine handling.</returns>
         private IEnumerator GetChatLogsFromServer()
         {
             string url = "http://localhost:3000/api/v1/chat/logs";
@@ -93,6 +116,9 @@ namespace LivingRim
             }
         }
 
+        /// <summary>
+        /// Represents a single chat log entry.
+        /// </summary>
         private class ChatLogEntry
         {
             public string CharacterId { get; set; }
@@ -106,6 +132,9 @@ namespace LivingRim
     [StaticConstructorOnStartup]
     public static class ChatLogTab
     {
+        /// <summary>
+        /// Static constructor to add the chat log tab to the main button defs.
+        /// </summary>
         static ChatLogTab()
         {
             var newDef = new MainButtonDef
@@ -121,10 +150,16 @@ namespace LivingRim
         }
     }
 
+    /// <summary>
+    /// Helper class for managing coroutines.
+    /// </summary>
     public class CoroutineHelper : MonoBehaviour
     {
         private static CoroutineHelper _instance;
 
+        /// <summary>
+        /// Gets the instance of the <see cref="CoroutineHelper"/> class.
+        /// </summary>
         public static CoroutineHelper Instance
         {
             get

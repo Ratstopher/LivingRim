@@ -2,12 +2,12 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import fs from 'fs';
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
-const logFilePath = 'chat_log.txt';
 
 app.use(bodyParser.json());
 
@@ -20,21 +20,22 @@ app.post('/api/v1/chat/completions', async (req, res) => {
     // Use the API key from environment variable
     const apiKey = process.env.OPENROUTER_API_KEY;
 
-    // Construct a detailed prompt including character details
     const prompt = `
-    Name: ${details.name}
-    Mood: ${details.mood}
-    Health: ${details.health}
-    Personality: ${details.personality}
-    Relationships: ${details.relationships}
+        Name: ${details.name}
+        Mood: ${details.mood}
+        Health: ${details.health}
+        Personality: ${details.personality}
+        Relationships: ${details.relationships}
 
-    The following is a conversation with ${details.name}, a character in RimWorld. ${details.name} has the personality traits of ${details.personality} and their current mood is ${details.mood}. They have the following relationships: ${details.relationships}.
-    Interaction: ${interactions.join(' ')}
+        The following is a conversation between You and user, You are ${details.name}, a character in RimWorld. ${details.name} has the personality traits of ${details.personality} and their current mood is ${details.mood}. They have the following relationships: ${details.relationships}.
+        Interaction: ${interactions[0]}
     `;
 
     const requestBody = {
         model: 'mistralai/mistral-7b-instruct:free',
-        messages: [{ role: 'user', content: prompt }]
+        messages: [
+            { role: 'user', content: prompt }
+        ]
     };
 
     console.log('Request Body:', requestBody);
@@ -52,14 +53,14 @@ app.post('/api/v1/chat/completions', async (req, res) => {
         const data = await response.json();
         console.log('Response from API:', data);
 
-        // Log the conversation to a file
-        const logEntry = `Character ID: ${characterId}\nInteractions: ${interactions.join(', ')}\nResponse: ${data.choices[0].message.content}\n\n`;
-        fs.appendFileSync(logFilePath, logEntry);
-        
         if (!response.ok) {
             console.error(`API request failed with status ${response.status}:`, data);
             return res.status(response.status).json({ error: data });
         }
+
+        // Log the response to chat_log.txt
+        const logEntry = `Character: ${details.name}, Response: ${data.choices[0].message.content}\n`;
+        fs.appendFileSync('chat_log.txt', logEntry);
 
         res.json({ response: data.choices[0].message.content });
     } catch (error) {

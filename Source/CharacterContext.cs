@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using JsonFx.Json;
 using Verse;
+using RimWorld;
+using UnityEngine;
 
 namespace LivingRim
 {
@@ -94,7 +96,9 @@ namespace LivingRim
                 mood = pawn?.needs?.mood?.CurLevel.ToString(),
                 health = pawn?.health?.summaryHealth?.SummaryHealthPercent.ToString(),
                 personality = GetPersonalityTraits(pawn),
-                relationships = GetRelationships(pawn)
+                relationships = GetRelationships(pawn),
+                environment = GetEnvironmentDetails(pawn),
+                needs = GetAllNeeds(pawn)
             };
         }
 
@@ -106,6 +110,29 @@ namespace LivingRim
         private static string GetRelationships(Pawn pawn)
         {
             return pawn != null ? string.Join(", ", pawn.relations.DirectRelations.Select(r => r.def.defName)) : "None";
+        }
+
+        private static string GetEnvironmentDetails(Pawn pawn)
+        {
+            var map = pawn.Map;
+            var room = pawn.GetRoom(RegionType.Set_All);
+            var temperature = map.mapTemperature.OutdoorTemp.ToString("F1");
+            var weather = map.weatherManager.curWeather.label;
+            var terrain = map.terrainGrid.TerrainAt(pawn.Position).label;
+            var biome = map.Biome.label;
+            var roomBeauty = room.GetStat(RoomStatDefOf.Impressiveness).ToString("F1");
+            var timeOfDay = GenLocalDate.HourInteger(pawn.Map);
+
+            return $"Temperature: {temperature}, Weather: {weather}, Terrain: {terrain}, Biome: {biome}, Room Beauty: {roomBeauty}, Time of Day: {timeOfDay}";
+        }
+
+        private static string GetAllNeeds(Pawn pawn)
+        {
+            if (pawn.needs == null)
+                return "None";
+
+            var needsList = pawn.needs.AllNeeds.Select(n => $"{n.LabelCap}: {n.CurLevelPercentage.ToString("P0")}");
+            return string.Join(", ", needsList);
         }
     }
 }

@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
+using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 using Verse;
@@ -60,11 +60,11 @@ namespace LivingRim
 
             yield return webRequest.SendWebRequest();
 
-        #if UNITY_2019_1_OR_NEWER
+#if UNITY_2019_1_OR_NEWER
             if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
-        #else
+#else
             if (webRequest.isNetworkError || webRequest.isHttpError)
-        #endif
+#endif
             {
                 Log.Error($"Error: {webRequest.error}");
                 callback("Error processing request.");
@@ -84,6 +84,7 @@ namespace LivingRim
                     {
                         Log.Message("Extracted response text successfully");
                         CharacterContext.AddInteraction(characterId, prompt, responseString);
+                        LogInteractionDetails(characterId, prompt, responseString);
                         callback(responseString);
                     }
                     else
@@ -97,6 +98,23 @@ namespace LivingRim
                     Log.Error($"JSON Parse Error: {ex.Message}");
                     callback("Error processing request.");
                 }
+            }
+        }
+
+        private static void LogInteractionDetails(string characterId, string prompt, string response)
+        {
+            string logFilePath = Path.Combine(GenFilePaths.SaveDataFolderPath, "../detailed_chat_log.txt");
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            var details = CharacterContext.GetCharacterDetails(characterId);
+
+            using (StreamWriter writer = new StreamWriter(logFilePath, true))
+            {
+                writer.WriteLine($"{timestamp} CharacterId: {characterId}");
+                writer.WriteLine($"Prompt: {prompt}");
+                writer.WriteLine($"Details: {details}");
+                writer.WriteLine($"Response: {response}");
+                writer.WriteLine();
             }
         }
     }

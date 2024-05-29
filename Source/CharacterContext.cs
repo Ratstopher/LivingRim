@@ -81,7 +81,7 @@ namespace LivingRim
             }
         }
 
-        private static string GetPawnName(string characterId)
+        public static string GetPawnName(string characterId)  // Changed to public
         {
             var pawn = Find.CurrentMap.mapPawns.AllPawns.FirstOrDefault(p => p.ThingID.ToString() == characterId);
             return pawn?.Name?.ToStringShort ?? "Unknown";

@@ -21,9 +21,10 @@ namespace LivingRim
                 if (selectedThing is Pawn pawn)
                 {
                     string characterId = pawn.ThingID.ToString(); // Ensure characterId is defined here
+                    string pawnName = CharacterContext.GetPawnName(characterId);
 
                     Dialog_Input dialog = null;
-                    dialog = new Dialog_Input("Enter your message:", "Send", text =>
+                    dialog = new Dialog_Input(pawnName, "Send", text =>
                     {
                         LLMService.GetResponseFromLLM(text, characterId, response =>
                         {

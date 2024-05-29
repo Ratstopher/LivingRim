@@ -1,10 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
-using Verse;
 
 namespace LivingRim
 {
@@ -84,7 +82,6 @@ namespace LivingRim
                     {
                         Log.Message("Extracted response text successfully");
                         CharacterContext.AddInteraction(characterId, prompt, responseString);
-                        LogInteractionDetails(characterId, prompt, responseString);
                         callback(responseString);
                     }
                     else
@@ -100,23 +97,6 @@ namespace LivingRim
                 }
             }
         }
-
-        private static void LogInteractionDetails(string characterId, string prompt, string response)
-        {
-            string logFilePath = Path.Combine(GenFilePaths.SaveDataFolderPath, "../detailed_chat_log.txt");
-            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-            var details = CharacterContext.GetCharacterDetails(characterId);
-
-            using (StreamWriter writer = new StreamWriter(logFilePath, true))
-            {
-                writer.WriteLine($"{timestamp} CharacterId: {characterId}");
-                writer.WriteLine($"Prompt: {prompt}");
-                writer.WriteLine($"Details: {details}");
-                writer.WriteLine($"Response: {response}");
-                writer.WriteLine();
-            }
-        }
     }
 
     public static class Log
@@ -129,25 +109,6 @@ namespace LivingRim
         public static void Message(string message)
         {
             Verse.Log.Message(message);
-        }
-    }
-
-    public class CoroutineHelper : MonoBehaviour
-    {
-        private static CoroutineHelper _instance;
-
-        public static CoroutineHelper Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    var obj = new GameObject("CoroutineHelper");
-                    _instance = obj.AddComponent<CoroutineHelper>();
-                    DontDestroyOnLoad(obj);
-                }
-                return _instance;
-            }
         }
     }
 }

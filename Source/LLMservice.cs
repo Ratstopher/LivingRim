@@ -19,28 +19,11 @@ namespace LivingRim
                 Log.Message("Entered GetResponseFromLLM method");
                 Log.Message($"Prompt: {prompt}, Character ID: {characterId}");
 
-                var pawn = Find.Selector.SingleSelectedThing as Pawn;
-                if (pawn == null)
-                {
-                    Log.Error("No pawn selected or selected thing is not a pawn.");
-                    callback("No pawn selected.");
-                    return;
-                }
-
-                var characterContext = CharacterContext.GetCharacterContext(pawn);
-
                 var requestBody = new
                 {
-                    characterId = characterContext.CharacterId,
+                    characterId = characterId,
                     interactions = new List<string> { prompt },
-                    details = new
-                    {
-                        name = characterContext.Name,
-                        mood = characterContext.Mood,
-                        health = characterContext.Health,
-                        personality = characterContext.Personality,
-                        relationships = characterContext.Relationships
-                    }
+                    details = CharacterContext.GetCharacterDetails(characterId)
                 };
 
                 var jsonWriter = new JsonFx.Json.JsonWriter();
@@ -53,7 +36,7 @@ namespace LivingRim
                 Verse.LongEventHandler.QueueLongEvent(() =>
                 {
                     Log.Message("Starting coroutine for SendRequest");
-                    CoroutineHelper.Instance.StartCoroutine(SendRequest(url, requestContent, callback, characterId));
+                    CoroutineHelper.Instance.StartCoroutine(SendRequest(url, requestContent, callback, characterId, prompt));
                 }, "SendingRequest", false, null);
             }
             catch (Exception ex)
@@ -63,19 +46,14 @@ namespace LivingRim
             }
         }
 
-        internal static void GetResponseFromLLM(string text, string characterId, Action<string> value, object details)
-        {
-            throw new NotImplementedException();
-        }
-
-        private static IEnumerator SendRequest(string url, string requestContent, Action<string> callback, string characterId)
+        private static IEnumerator SendRequest(string url, string requestContent, Action<string> callback, string characterId, string prompt)
         {
             Log.Message("Entered SendRequest coroutine");
             Log.Message($"URL: {url}, RequestContent: {requestContent}");
 
             var webRequest = new UnityWebRequest(url, "POST")
             {
-                uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(requestContent)),
+                uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(requestContent)),
                 downloadHandler = new DownloadHandlerBuffer()
             };
             webRequest.SetRequestHeader("Content-Type", "application/json");
@@ -105,7 +83,7 @@ namespace LivingRim
                     if (jsonResponse.TryGetValue("response", out var responseObj) && responseObj is string responseString)
                     {
                         Log.Message("Extracted response text successfully");
-                        CharacterContext.AddInteraction(characterId, responseString);
+                        CharacterContext.AddInteraction(characterId, prompt, responseString);
                         callback(responseString);
                     }
                     else

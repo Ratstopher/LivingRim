@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,11 +11,6 @@ namespace LivingRim
     {
         public string CharacterId { get; set; }
         public List<string> Interactions { get; set; } = new List<string>();
-        public string Name { get; set; }
-        public string Mood { get; set; }
-        public string Health { get; set; }
-        public string Personality { get; set; }
-        public string Relationships { get; set; }
 
         private static string contextFilePath = "Mods/LivingRim/api/context.json";
 
@@ -57,36 +53,59 @@ namespace LivingRim
             return context;
         }
 
-        public static void AddInteraction(string characterId, string interaction)
+        public static void AddInteraction(string characterId, string interaction, string response)
         {
             var contexts = LoadContexts();
             var context = GetOrCreateContext(characterId);
-            context.Interactions.Add(interaction);
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            context.Interactions.Add($"{timestamp} Player: {interaction}");
+            context.Interactions.Add($"{timestamp} {GetPawnName(characterId)}: {response}");
+
             SaveContexts(contexts);
+            LogInteractionToFile(characterId, interaction, response);
             Log.Message($"Added interaction for Character ID: {characterId}");
         }
 
-        public static CharacterContext GetCharacterContext(Pawn pawn)
+        private static void LogInteractionToFile(string characterId, string interaction, string response)
         {
-            return new CharacterContext
+            string logFilePath = Path.Combine(GenFilePaths.SaveDataFolderPath, "../chat_log.txt");
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            using (StreamWriter writer = new StreamWriter(logFilePath, true))
             {
-                CharacterId = pawn.ThingID.ToString(),
-                Name = pawn.Name.ToStringShort,
-                Mood = pawn.needs.mood.CurLevel.ToString(),
-                Health = pawn.health.summaryHealth.SummaryHealthPercent.ToString(),
-                Personality = GetPersonalityTraits(pawn),
-                Relationships = GetRelationships(pawn)
+                writer.WriteLine($"{timestamp} Player: {interaction}");
+                writer.WriteLine($"{timestamp} {GetPawnName(characterId)}: {response}");
+            }
+        }
+
+        private static string GetPawnName(string characterId)
+        {
+            var pawn = Find.CurrentMap.mapPawns.AllPawns.FirstOrDefault(p => p.ThingID.ToString() == characterId);
+            return pawn?.Name?.ToStringShort ?? "Unknown";
+        }
+
+        public static object GetCharacterDetails(string characterId)
+        {
+            var pawn = Find.CurrentMap.mapPawns.AllPawns.FirstOrDefault(p => p.ThingID.ToString() == characterId);
+            return new
+            {
+                name = pawn?.Name?.ToStringShort,
+                mood = pawn?.needs?.mood?.CurLevel.ToString(),
+                health = pawn?.health?.summaryHealth?.SummaryHealthPercent.ToString(),
+                personality = GetPersonalityTraits(pawn),
+                relationships = GetRelationships(pawn)
             };
         }
 
         private static string GetPersonalityTraits(Pawn pawn)
         {
-            return string.Join(", ", pawn.story.traits.allTraits.Select(t => t.LabelCap));
+            return pawn != null ? string.Join(", ", pawn.story.traits.allTraits.Select(t => t.LabelCap)) : "None";
         }
 
         private static string GetRelationships(Pawn pawn)
         {
-            return string.Join(", ", pawn.relations.DirectRelations.Select(r => r.def.defName));
+            return pawn != null ? string.Join(", ", pawn.relations.DirectRelations.Select(r => r.def.defName)) : "None";
         }
     }
 }

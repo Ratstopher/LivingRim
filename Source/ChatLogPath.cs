@@ -16,13 +16,17 @@ namespace LivingRim
             this.forcePause = true;
             this.absorbInputAroundWindow = true;
             this.doCloseX = true;
-            LoadChatLog();
         }
 
         public override Vector2 RequestedTabSize => new Vector2(600f, 800f);
 
         public override void DoWindowContents(Rect inRect)
         {
+            if (chatLogContent == null)
+            {
+                LoadChatLog();
+            }
+
             Rect outRect = new Rect(inRect.x, inRect.y, inRect.width, inRect.height);
             Rect viewRect = new Rect(0f, 0f, inRect.width - 16f, Text.CalcHeight(chatLogContent, inRect.width - 16f));
             Widgets.BeginScrollView(outRect, ref this.scrollPosition, viewRect, true);
@@ -32,7 +36,7 @@ namespace LivingRim
 
         private void LoadChatLog()
         {
-            string logFilePath = Path.Combine(GenFilePaths.SaveDataFolderPath, "../chat_log.txt"); // Adjusted pathPath = Path.Combine(GenFilePaths.SaveDataFolderPath, "chat_log.txt");
+            string logFilePath = Path.Combine(GenFilePaths.ModsFolderPath, "LivingRim", "chat_log.txt");
 
             if (File.Exists(logFilePath))
             {

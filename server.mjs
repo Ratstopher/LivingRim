@@ -1,13 +1,16 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import fetch from 'node-fetch';
-import dotenv from 'dotenv';
 import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
+const __dirname = path.dirname(new URL(import.meta.url).pathname).substring(1);
+const LOG_FILE_PATH = path.join(__dirname, 'chat_log.txt');
 
 app.use(bodyParser.json());
 
@@ -17,24 +20,27 @@ app.post('/api/v1/chat/completions', async (req, res) => {
     // Extract data from request
     const { characterId, interactions, details } = req.body;
 
+    const prompt = `
+    Name: ${details.name}
+    Mood: ${details.mood}
+    Health: ${details.health}
+    Personality: ${details.personality}
+    Relationships: ${details.relationships}
+
+    The following is a conversation between You and user, You are ${details.name}, a character in RimWorld. ${details.name} has the personality traits of ${details.personality} and their current mood is ${details.mood}. They have the following relationships: ${details.relationships}.
+    Interaction: ${interactions.join(' ')}
+    `;
+
     // Use the API key from environment variable
     const apiKey = process.env.OPENROUTER_API_KEY;
-
-    const prompt = `
-        Name: ${details.name}
-        Mood: ${details.mood}
-        Health: ${details.health}
-        Personality: ${details.personality}
-        Relationships: ${details.relationships}
-
-        The following is a conversation between You and user, You are ${details.name}, a character in RimWorld. ${details.name} has the personality traits of ${details.personality} and their current mood is ${details.mood}. They have the following relationships: ${details.relationships}.
-        Interaction: ${interactions[0]}
-    `;
 
     const requestBody = {
         model: 'mistralai/mistral-7b-instruct:free',
         messages: [
-            { role: 'user', content: prompt }
+            {
+                role: 'user',
+                content: prompt
+            }
         ]
     };
 
@@ -58,16 +64,21 @@ app.post('/api/v1/chat/completions', async (req, res) => {
             return res.status(response.status).json({ error: data });
         }
 
-        // Log the response to chat_log.txt
-        const logEntry = `Character: ${details.name}, Response: ${data.choices[0].message.content}\n`;
-        fs.appendFileSync('chat_log.txt', logEntry);
+        const responseText = data.choices[0].message.content;
+        logInteraction(characterId, interactions.join(' '), responseText);
 
-        res.json({ response: data.choices[0].message.content });
+        res.json({ response: responseText });
     } catch (error) {
         console.error('Error making API request:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
+const logInteraction = (characterId, interaction, response) => {
+    const timestamp = new Date().toISOString();
+    const logEntry = `${timestamp} Player: ${interaction}\n${timestamp} ${characterId}: ${response}\n`;
+    fs.appendFileSync(LOG_FILE_PATH, logEntry, 'utf8');
+};
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

@@ -1,45 +1,21 @@
-﻿/// <summary>
-/// Represents detailed information about a character.
-/// </summary>
-public class CharacterDetails
+﻿using System.Collections.Generic;
+
+namespace LivingRim
 {
-    /// <summary>
-    /// Gets or sets the name of the character.
-    /// </summary>
-    public string name { get; set; }
-
-    /// <summary>
-    /// Gets or sets the mood of the character.
-    /// </summary>
-    public string mood { get; set; }
-
-    /// <summary>
-    /// Gets or sets the health status of the character.
-    /// </summary>
-    public string health { get; set; }
-
-    /// <summary>
-    /// Gets or sets the personality traits of the character.
-    /// </summary>
-    public string personality { get; set; }
-
-    /// <summary>
-    /// Gets or sets the relationships of the character.
-    /// </summary>
-    public string relationships { get; set; }
-
-    /// <summary>
-    /// Gets or sets the environmental details of the character's surroundings.
-    /// </summary>
-    public string environment { get; set; }
-
-    /// <summary>
-    /// Gets or sets the needs of the character.
-    /// </summary>
-    public string needs { get; set; }
-
-    /// <summary>
-    /// Gets or sets the backstory of the character.
-    /// </summary>
-    public string backstory { get; set; }
+    public class CharacterDetails
+    {
+        public string name { get; set; }
+        public string mood { get; set; }
+        public string health { get; set; }
+        public string personality { get; set; }
+        public string relationships { get; set; }
+        public string environment { get; set; }
+        public string needs { get; set; }
+        public string backstory { get; set; }
+        public Dictionary<string, int> skills { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, string> passions { get; set; } = new Dictionary<string, string>();
+        public string currentJob { get; set; }
+        public string inventory { get; set; }
+        public List<string> recentEvents { get; set; } = new List<string>();
+    }
 }

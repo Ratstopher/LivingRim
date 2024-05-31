@@ -1,20 +1,15 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using Verse;
 
 namespace LivingRim
 {
-    public class LLMService
+    public static class LLMService
     {
-        /// <summary>
-        /// Gets a response from the LLM based on the provided prompt and character ID.
-        /// </summary>
-        /// <param name="prompt">The user's input prompt.</param>
-        /// <param name="characterId">The ID of the character.</param>
-        /// <param name="callback">The callback to handle the response.</param>
-        public static void GetResponseFromLLM(string prompt, string characterId, Action<string> callback)
+        public static void GetResponseFromLLM(string prompt, string characterId, CharacterDetails details, Action<string> callback)
         {
             string requestContent = null;
 
@@ -22,8 +17,6 @@ namespace LivingRim
             {
                 Log.Message("Entered GetResponseFromLLM method");
                 Log.Message($"Prompt: {prompt}, Character ID: {characterId}");
-
-                CharacterDetails details = CharacterContext.GetCharacterDetails(characterId);
 
                 if (details.name == "Unknown")
                 {
@@ -59,15 +52,6 @@ namespace LivingRim
             }
         }
 
-        /// <summary>
-        /// Sends a request to the LLM API.
-        /// </summary>
-        /// <param name="url">The URL of the LLM API.</param>
-        /// <param name="requestContent">The request content in JSON format.</param>
-        /// <param name="callback">The callback to handle the response.</param>
-        /// <param name="characterId">The ID of the character.</param>
-        /// <param name="prompt">The user's input prompt.</param>
-        /// <returns>An IEnumerator for coroutine handling.</returns>
         private static IEnumerator SendRequest(string url, string requestContent, Action<string> callback, string characterId, string prompt)
         {
             Log.Message("Entered SendRequest coroutine");
@@ -105,7 +89,6 @@ namespace LivingRim
                     if (jsonResponse.TryGetValue("response", out var responseObj) && responseObj is string responseString)
                     {
                         Log.Message("Extracted response text successfully");
-                        CharacterContext.AddInteraction(characterId, prompt, responseString);
                         callback(responseString);
                     }
                     else
@@ -123,24 +106,24 @@ namespace LivingRim
         }
     }
 
-    public static class Log
+    public static class CoroutineHelper
     {
-        /// <summary>
-        /// Logs an error message.
-        /// </summary>
-        /// <param name="message">The error message.</param>
-        public static void Error(string message)
+        private static CoroutineRunner _runner;
+
+        public static CoroutineRunner Instance
         {
-            Verse.Log.Error(message);
+            get
+            {
+                if (_runner == null)
+                {
+                    var obj = new GameObject("CoroutineRunner");
+                    UnityEngine.Object.DontDestroyOnLoad(obj);
+                    _runner = obj.AddComponent<CoroutineRunner>();
+                }
+                return _runner;
+            }
         }
 
-        /// <summary>
-        /// Logs a general message.
-        /// </summary>
-        /// <param name="message">The message to log.</param>
-        public static void Message(string message)
-        {
-            Verse.Log.Message(message);
-        }
+        public class CoroutineRunner : MonoBehaviour { }
     }
 }

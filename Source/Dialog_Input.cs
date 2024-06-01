@@ -1,24 +1,28 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Verse;
 using RimWorld;
+using System.Collections;
 using UnityEngine.Networking;
+using JsonFx.Json;
 
 namespace LivingRim
 {
     public class Dialog_Input : Window
     {
-        private string inputText = string.Empty; // User input text
-        private Pawn pawn; // The pawn being interacted with
-        private Action<string> onSendCallback; // Callback for sending messages
-        private bool isLoading = false; // Flag to indicate if chat logs are being loaded
-        private string lastUserMessage; // Last message sent by the user
-        private string lastModelResponse; // Last response from the model
-        private Vector2 responseScrollPosition = Vector2.zero; // Scroll position for the response area
+        private string inputText = string.Empty;
+        private Pawn pawn;
+        private Action<string> onSendCallback;
+        private bool isLoading = false;
+        private string lastUserMessage;
+        private string lastModelResponse;
+        private Vector2 responseScrollPosition = Vector2.zero;
+        private string persona = string.Empty;
+        private string description = string.Empty;
+        private string characterId;
 
-        // Constructor
         public Dialog_Input(Pawn pawn, Action<string> onSendCallback)
         {
             this.pawn = pawn;
@@ -26,16 +30,14 @@ namespace LivingRim
             this.closeOnAccept = false;
             this.forcePause = true;
             this.absorbInputAroundWindow = true;
-            this.doCloseX = true;  // Add close button
+            this.doCloseX = true;
             this.draggable = true;
             this.resizeable = true;
-            this.doCloseButton = false;  // Hide the close button in the corner
+            this.doCloseButton = false;
         }
 
-        // Initial size of the window
         public override Vector2 InitialSize => new Vector2(600f, 500f);
 
-        // Main content rendering function
         public override void DoWindowContents(Rect inRect)
         {
             if (isLoading)
@@ -50,119 +52,107 @@ namespace LivingRim
             float inputHeight = 30f;
             float spacing = 10f;
 
-            // Header
             Text.Font = GameFont.Small;
-            Widgets.Label(new Rect(0f, 0f, inRect.width, headerHeight), GetHeaderText());
+            Widgets.Label(new Rect(0f, 0f, inRect.width, headerHeight), $"Chat with {pawn.Name.ToStringShort}");
 
-            // Pawn Portrait
             if (pawn != null)
             {
                 Rect pawnRect = new Rect(0f, headerHeight + spacing, 100f, 100f);
-                GUI.DrawTexture(pawnRect, PortraitsCache.Get(
-                    pawn,
-                    new Vector2(100f, 100f),
-                    Rot4.South,               // rotation
-                    default(Vector3),         // cameraOffset
-                    1f,                       // cameraZoom
-                    true,                     // renderBody
-                    true,                     // renderHeadgear
-                    true,                     // renderWeapons
-                    true,                     // renderApparel
-                    null,                     // apparelColor
-                    null,                     // humanlikeBodyColor
-                    false,                    // renderArms
-                    null                      // pawnHealthState
-                ));
+                GUI.DrawTexture(pawnRect, PortraitsCache.Get(pawn, new Vector2(100f, 100f), Rot4.South));
             }
 
-            // Response display box
-            float responseBoxY = headerHeight + portraitHeight + 2 * spacing;
+            float personaLabelY = headerHeight + portraitHeight + 2 * spacing;
+            Widgets.Label(new Rect(110f, personaLabelY, 100f, inputHeight), "Persona:");
+            persona = Widgets.TextField(new Rect(210f, personaLabelY, inRect.width - 320f, inputHeight), persona);
+
+            float descriptionLabelY = personaLabelY + inputHeight + spacing;
+            Widgets.Label(new Rect(110f, descriptionLabelY, 100f, inputHeight), "Description:");
+            description = Widgets.TextField(new Rect(210f, descriptionLabelY, inRect.width - 320f, inputHeight), description);
+
+            if (Widgets.ButtonText(new Rect(inRect.width - 100f, personaLabelY, 80f, inputHeight), "Save"))
+            {
+                var details = CharacterContext.GetCharacterDetails(pawn.ThingID.ToString(), persona, description);
+                CharacterContext.SaveCharacterDetails(details);
+
+            }
+
+            float responseBoxY = descriptionLabelY + inputHeight + 2 * spacing;
             float responseBoxHeight = inRect.height - responseBoxY - buttonHeight - inputHeight - 4 * spacing;
             Rect responseBoxRect = new Rect(inRect.x, responseBoxY, inRect.width, responseBoxHeight);
-            Widgets.DrawBoxSolid(responseBoxRect, Color.black); // Black color for the response box
+            Widgets.DrawBoxSolid(responseBoxRect, Color.black);
+            Widgets.DrawBoxSolidWithOutline(responseBoxRect, Color.black, Color.white);
 
-            // Scrollable area inside the response box
+
             Rect scrollViewRect = new Rect(responseBoxRect.x + 10f, responseBoxRect.y + 10f, responseBoxRect.width - 20f, responseBoxRect.height - 20f);
             Widgets.BeginScrollView(scrollViewRect, ref responseScrollPosition, new Rect(0f, 0f, scrollViewRect.width - 16f, scrollViewRect.height));
 
             float y = 0f;
             if (!string.IsNullOrEmpty(lastUserMessage))
             {
-                DrawFormattedText(new Rect(0, y, scrollViewRect.width, Text.CalcHeight(lastUserMessage, scrollViewRect.width)), $"Player: {lastUserMessage}", true);
-                y += Text.CalcHeight(lastUserMessage, scrollViewRect.width) + spacing; // Adjust the spacing between messages
+                DrawFormattedText(new Rect(0, y, scrollViewRect.width, Text.CalcHeight(lastUserMessage, scrollViewRect.width)), $"Player: {lastUserMessage}", true, persona);
+                y += Text.CalcHeight(lastUserMessage, scrollViewRect.width) + spacing;
             }
             if (!string.IsNullOrEmpty(lastModelResponse))
             {
-                DrawFormattedText(new Rect(0, y, scrollViewRect.width, Text.CalcHeight(lastModelResponse, scrollViewRect.width)), $"{pawn.Name.ToStringShort}: {lastModelResponse}", false);
-                y += Text.CalcHeight(lastModelResponse, scrollViewRect.width) + spacing; // Adjust the spacing between messages
+                DrawFormattedText(new Rect(0, y, scrollViewRect.width, Text.CalcHeight(lastModelResponse, scrollViewRect.width)), $"{pawn.Name.ToStringShort}: {lastModelResponse}", false, persona);
+                y += Text.CalcHeight(lastModelResponse, scrollViewRect.width) + spacing;
             }
             Widgets.EndScrollView();
 
-            // Input Text Area and Buttons at the bottom
             float inputAreaY = inRect.height - inputHeight - spacing;
             Rect inputRect = new Rect(inRect.x, inputAreaY, inRect.width - 100f - spacing, inputHeight);
             inputText = Widgets.TextField(inputRect, inputText);
 
-            // Send Button
             Rect sendButtonRect = new Rect(inRect.x + inRect.width - 95f, inputAreaY, 40f, inputHeight);
             if (Widgets.ButtonText(sendButtonRect, "Send") || (Event.current.isKey && Event.current.keyCode == KeyCode.Return))
             {
                 SendMessage();
             }
 
-            // View Logs Button
             Rect viewLogsButtonRect = new Rect(inRect.x + inRect.width - 45f, inputAreaY, 40f, inputHeight);
             if (Widgets.ButtonText(viewLogsButtonRect, "Logs"))
             {
-                LongEventHandler.QueueLongEvent(() => CoroutineHelper.Instance.StartCoroutine(FetchAndShowLogs()), "Fetching logs", false, null);
+                LongEventHandler.QueueLongEvent(() => CoroutineHelper.Instance.StartCoroutine(FetchAndShowLogs(characterId)), "Fetching logs", false, null);
             }
 
             HandleScrollEvents(inRect);
         }
 
-        // Get header text for the dialog
-        protected string GetHeaderText()
-        {
-            return $"Chat with {pawn.Name.ToStringShort}";
-        }
-
-        // Send message function
         private void SendMessage()
         {
             lastUserMessage = inputText;
             inputText = string.Empty;
             onSendCallback?.Invoke(lastUserMessage);
-            LLMService.GetResponseFromLLM(lastUserMessage, pawn.ThingID.ToString(), CharacterContext.GetCharacterDetails(pawn.ThingID.ToString()), SetResponseText);
+            var interactions = new List<string> { lastUserMessage }; // Ensure interactions is an array
+            LLMService.GetResponseFromLLM(interactions, pawn.ThingID.ToString(), CharacterContext.GetCharacterDetails(pawn.ThingID.ToString(), persona, description), SetResponseText);
             ScrollToBottom();
         }
 
-        // Set response text from the model
+
+
         public void SetResponseText(string response)
         {
             lastModelResponse = response;
             ScrollToBottom();
         }
 
-        // Scroll to the bottom of the response area
         private void ScrollToBottom()
         {
             responseScrollPosition = new Vector2(responseScrollPosition.x, float.MaxValue);
         }
 
-        // Handle scroll events
         private void HandleScrollEvents(Rect inRect)
         {
             Event currentEvent = Event.current;
             if (currentEvent.type == EventType.ScrollWheel && inRect.Contains(currentEvent.mousePosition))
             {
-                responseScrollPosition.y += currentEvent.delta.y * 20f; // Adjust scroll speed if necessary
+                responseScrollPosition.y += currentEvent.delta.y * 20f;
                 responseScrollPosition.y = Mathf.Clamp(responseScrollPosition.y, 0, float.MaxValue);
                 currentEvent.Use();
             }
         }
 
-        // Draw formatted text
-        private void DrawFormattedText(Rect rect, string text, bool isPlayer)
+        private void DrawFormattedText(Rect rect, string text, bool isPlayer, string persona)
         {
             Text.Anchor = TextAnchor.UpperLeft;
             Text.Font = GameFont.Small;
@@ -173,18 +163,18 @@ namespace LivingRim
 
             foreach (var line in lines)
             {
-                Rect lineRect = new Rect(rect.x, y, rect.width, Text.CalcHeight(line, rect.width));
-                Widgets.Label(lineRect, line);
+                string formattedLine = isPlayer ? $"{persona}: {line}" : line;
+                Rect lineRect = new Rect(rect.x, y, rect.width, Text.CalcHeight(formattedLine, rect.width));
+                Widgets.Label(lineRect, formattedLine);
                 y += lineRect.height;
             }
 
             GUI.color = Color.white;
         }
 
-        // Fetch chat logs and show ChatLogWindow
-        private IEnumerator FetchAndShowLogs()
+        private IEnumerator FetchAndShowLogs(string characterId)
         {
-            string url = $"http://localhost:3000/api/v1/chat/logs/{pawn.Name.ToStringShort}";
+            string url = $"http://localhost:3000/api/v1/chat/logs/{characterId}";
             var www = new UnityWebRequest(url)
             {
                 downloadHandler = new DownloadHandlerBuffer()
@@ -198,25 +188,24 @@ namespace LivingRim
             }
             else
             {
+                var logs = www.downloadHandler.text;
+                // Process the logs as needed
+            }
+        
+
+        yield return www.SendWebRequest();
+
+            if (www.isNetworkError || www.isHttpError)
+            {
+                Log.Error("Error fetching chat logs: " + www.error);
+            }
+            else
+            {
                 var jsonResult = www.downloadHandler.text;
-                var logs = new JsonFx.Json.JsonReader().Read<List<ChatLogEntry>>(jsonResult);
+                var logs = new JsonReader().Read<List<ChatLogEntry>>(jsonResult);
                 Find.WindowStack.Add(new ChatLogWindow(pawn, logs));
                 Close();
             }
-        }
-    }
-
-    // Log helper class
-    public static class Log
-    {
-        public static void Error(string message)
-        {
-            Verse.Log.Error(message);
-        }
-
-        public static void Message(string message)
-        {
-            Verse.Log.Message(message);
         }
     }
 }

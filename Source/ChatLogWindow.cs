@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
 using Verse;
 
 namespace LivingRim
@@ -17,7 +16,7 @@ namespace LivingRim
         public ChatLogWindow(Pawn pawn, List<ChatLogEntry> chatLogEntries)
         {
             this.pawn = pawn;
-            this.chatLogEntries = chatLogEntries;
+            this.chatLogEntries = chatLogEntries ?? new List<ChatLogEntry>();
             this.doCloseX = true;
             this.forcePause = true;
             this.absorbInputAroundWindow = true;
@@ -32,8 +31,8 @@ namespace LivingRim
             float spacing = 10f;
 
             // Header
-            Text.Font = GameFont.Small;
-            string headerText = $"{pawn.Name.ToStringShort} - {chatLogEntries[currentLogIndex].Timestamp}";
+            Text.Font = GameFont.Medium;
+            string headerText = $"{pawn.Name.ToStringShort} - {DateTime.Now.ToString("M/d/yyyy h:mm tt")}";
             Widgets.Label(new Rect(0f, 0f, inRect.width, headerHeight), headerText);
 
             // Response display box
@@ -47,8 +46,9 @@ namespace LivingRim
             Widgets.BeginScrollView(scrollViewRect, ref scrollPosition, new Rect(0f, 0f, scrollViewRect.width - 16f, scrollViewRect.height));
             float y = 0f;
 
-            foreach (var entry in chatLogEntries)
+            if (currentLogIndex >= 0 && currentLogIndex < chatLogEntries.Count)
             {
+                var entry = chatLogEntries[currentLogIndex];
                 DrawFormattedText(new Rect(0, y, scrollViewRect.width, Text.CalcHeight(entry.Content, scrollViewRect.width)), entry.Content, entry.Name == "Player");
                 y += Text.CalcHeight(entry.Content, scrollViewRect.width) + spacing;
             }
@@ -57,21 +57,24 @@ namespace LivingRim
 
             // Navigation buttons
             float buttonAreaY = inRect.height - buttonHeight;
-            Rect backButtonRect = new Rect(inRect.x + inRect.width / 2 - 60f, buttonAreaY, 60f, buttonHeight);
-            if (Widgets.ButtonText(backButtonRect, "Back"))
-            {
-                Find.WindowStack.Add(new Dialog_Input(pawn, message => { }));
-                Close();
-            }
+            float buttonWidth = 60f;
+            float centerX = inRect.width / 2;
 
-            Rect prevButtonRect = new Rect(inRect.x + inRect.width / 2 - 120f, buttonAreaY, 60f, buttonHeight);
+            Rect prevButtonRect = new Rect(centerX - buttonWidth - 30f, buttonAreaY, buttonWidth, buttonHeight);
             if (Widgets.ButtonText(prevButtonRect, "<") && currentLogIndex > 0)
             {
                 currentLogIndex--;
                 scrollPosition = Vector2.zero; // Reset scroll position
             }
 
-            Rect nextButtonRect = new Rect(inRect.x + inRect.width / 2 + 60f, buttonAreaY, 60f, buttonHeight);
+            Rect backButtonRect = new Rect(centerX - buttonWidth / 2, buttonAreaY, buttonWidth, buttonHeight);
+            if (Widgets.ButtonText(backButtonRect, "Back"))
+            {
+                Find.WindowStack.Add(new Dialog_Input(pawn, message => { }));
+                Close();
+            }
+
+            Rect nextButtonRect = new Rect(centerX + 30f, buttonAreaY, buttonWidth, buttonHeight);
             if (Widgets.ButtonText(nextButtonRect, ">") && currentLogIndex < chatLogEntries.Count - 1)
             {
                 currentLogIndex++;
@@ -96,28 +99,6 @@ namespace LivingRim
             }
 
             GUI.color = Color.white;
-        }
-
-        // Fetch chat logs
-        private IEnumerator FetchChatLogs()
-        {
-            string url = $"http://localhost:3000/api/v1/chat/logs/{pawn.Name.ToStringShort}";
-            var www = new UnityWebRequest(url)
-            {
-                downloadHandler = new DownloadHandlerBuffer()
-            };
-
-            yield return www.SendWebRequest();
-
-            if (www.isNetworkError || www.isHttpError)
-            {
-                Log.Error("Error fetching chat logs: " + www.error);
-            }
-            else
-            {
-                var jsonResult = www.downloadHandler.text;
-                chatLogEntries = new JsonFx.Json.JsonReader().Read<List<ChatLogEntry>>(jsonResult);
-            }
         }
     }
 

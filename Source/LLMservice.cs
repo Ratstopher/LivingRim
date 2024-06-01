@@ -1,129 +1,75 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
-using UnityEngine.Networking;
 using Verse;
+using RimWorld;
+using System.Collections;
+using UnityEngine.Networking;
 
 namespace LivingRim
 {
-    public static class LLMService
+    public class LLMService
     {
-        public static void GetResponseFromLLM(string prompt, string characterId, CharacterDetails details, Action<string> callback)
+        public static void GetResponseFromLLM(List<string> interactions, string characterId, CharacterDetails details, Action<string> callback)
         {
-            string requestContent = null;
+            Log.Message($"Entered GetResponseFromLLM method");
 
-            try
+            var requestContent = new
             {
-                Log.Message("Entered GetResponseFromLLM method");
-                Log.Message($"Prompt: {prompt}, Character ID: {characterId}");
+                characterId = characterId,
+                interactions = interactions, // Ensure this is an array
+                details = details
+            };
 
-                if (details.name == "Unknown")
-                {
-                    Log.Error($"Character details for ID {characterId} are unknown.");
-                    callback("Error: Character not found.");
-                    return;
-                }
+            string requestContentJson = new JsonFx.Json.JsonWriter().Write(requestContent);
+            string url = "http://localhost:3000/api/v1/chat/completions";
 
-                var requestBody = new
-                {
-                    characterId = characterId,
-                    interactions = new List<string> { prompt },
-                    details = details
-                };
+            Log.Message($"URL: {url}");
+            Log.Message($"Request Content: {requestContentJson}");
 
-                var jsonWriter = new JsonFx.Json.JsonWriter();
-                requestContent = jsonWriter.Write(requestBody);
-                Log.Message($"Request Content: {requestContent}");
-
-                string url = "http://localhost:3000/api/v1/chat/completions";
-                Log.Message($"URL: {url}");
-
-                Verse.LongEventHandler.QueueLongEvent(() =>
-                {
-                    Log.Message("Starting coroutine for SendRequest");
-                    CoroutineHelper.Instance.StartCoroutine(SendRequest(url, requestContent, callback, characterId, prompt));
-                }, "SendingRequest", false, null);
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"Exception in GetResponseFromLLM: {ex.Message}\n{ex.StackTrace}");
-                callback("Error processing request.");
-            }
+            CoroutineHelper.Instance.StartCoroutine(SendRequest(url, requestContentJson, callback));
         }
 
-        private static IEnumerator SendRequest(string url, string requestContent, Action<string> callback, string characterId, string prompt)
+
+        private static IEnumerator SendRequest(string url, string requestContent, Action<string> callback)
         {
-            Log.Message("Entered SendRequest coroutine");
-            Log.Message($"URL: {url}, RequestContent: {requestContent}");
-
-            var webRequest = new UnityWebRequest(url, "POST")
+            Log.Message($"Entered SendRequest coroutine");
+            using (UnityWebRequest www = new UnityWebRequest(url, "POST"))
             {
-                uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(requestContent)),
-                downloadHandler = new DownloadHandlerBuffer()
-            };
-            webRequest.SetRequestHeader("Content-Type", "application/json");
+                byte[] bodyRaw = Encoding.UTF8.GetBytes(requestContent);
+                www.uploadHandler = new UploadHandlerRaw(bodyRaw);
+                www.downloadHandler = new DownloadHandlerBuffer();
+                www.SetRequestHeader("Content-Type", "application/json");
 
-            yield return webRequest.SendWebRequest();
+                yield return www.SendWebRequest();
 
-#if UNITY_2019_1_OR_NEWER
-            if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
-#else
-            if (webRequest.isNetworkError || webRequest.isHttpError)
-#endif
-            {
-                Log.Error($"Error: {webRequest.error}");
-                callback("Error processing request.");
-            }
-            else
-            {
-                try
+                if (www.isNetworkError || www.isHttpError)
                 {
-                    var responseText = webRequest.downloadHandler.text;
-                    Log.Message($"Response Text: {responseText}");
-
-                    var jsonReader = new JsonFx.Json.JsonReader();
-                    var jsonResponse = jsonReader.Read<Dictionary<string, object>>(responseText);
-                    Log.Message("Parsed JSON response successfully");
-
-                    if (jsonResponse.TryGetValue("response", out var responseObj) && responseObj is string responseString)
-                    {
-                        Log.Message("Extracted response text successfully");
-                        callback(responseString);
-                    }
-                    else
-                    {
-                        Log.Error("Failed to extract response text from JSON");
-                        callback("No response from the model.");
-                    }
+                    Log.Error($"Error: {www.error}");
+                    callback?.Invoke($"Error: {www.error}");
                 }
-                catch (Exception ex)
+                else
                 {
-                    Log.Error($"JSON Parse Error: {ex.Message}");
-                    callback("Error processing request.");
+                    Log.Message($"Response Text: {www.downloadHandler.text}");
+                    try
+                    {
+                        var response = new JsonFx.Json.JsonReader().Read<ResponseContent>(www.downloadHandler.text);
+                        callback?.Invoke(response.content);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error($"Failed to extract response text from JSON: {e.Message}");
+                        callback?.Invoke("Failed to extract response text from JSON");
+                    }
                 }
             }
         }
     }
 
-    public static class CoroutineHelper
+    [Serializable]
+    public class ResponseContent
     {
-        private static CoroutineRunner _runner;
-
-        public static CoroutineRunner Instance
-        {
-            get
-            {
-                if (_runner == null)
-                {
-                    var obj = new GameObject("CoroutineRunner");
-                    UnityEngine.Object.DontDestroyOnLoad(obj);
-                    _runner = obj.AddComponent<CoroutineRunner>();
-                }
-                return _runner;
-            }
-        }
-
-        public class CoroutineRunner : MonoBehaviour { }
+        public string content;
     }
 }

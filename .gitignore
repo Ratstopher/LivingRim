@@ -49,3 +49,13 @@ temp/
 /chat_log.db
 /chat_log.db
 /chat_log.txt
+/.venv
+/character_context_server
+/Servers/data/backupOP.mjs
+/Servers/Servers.zip
+/install_server.bat
+/main.py
+/Mods - Shortcut.lnk
+/ReadyServer.bat
+/requirements.txt
+/TEST.bat

@@ -1,6 +1,3 @@
-Here's the updated `README.md` including the disclaimer and instructions on obtaining a Cohere trial key:
-
-```markdown
 # LivingRim
 
 ## Overview
@@ -134,6 +131,3 @@ echo Starting Node.js server...
 cd Servers
 npm start
 pause
-```
-
-This `README.md` now includes the disclaimer and detailed steps on obtaining a Cohere trial key, as well as the batch files for setting up and starting the server on Windows.

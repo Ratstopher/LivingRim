@@ -1,144 +1,139 @@
-Sure, here's the updated `README.md` with the requested changes:
+Here's the updated `README.md` including the disclaimer and instructions on obtaining a Cohere trial key:
 
 ```markdown
 # LivingRim
 
-LivingRim is a cutting-edge mod for RimWorld, designed to elevate character interactions by integrating with an advanced external API. This project is composed of a RimWorld mod written in C# and a Node.js server that facilitates API communications.
+## Overview
+LivingRim is a mod for RimWorld that enhances character interactions by integrating advanced AI capabilities. This mod uses a custom server to process and generate responses, making your RimWorld experience more immersive and engaging.
 
 ## Features
+- Enhanced dialog with AI-generated responses.
+- Detailed character profiles and interactions.
+- Customizable character personas and descriptions.
+- Integration with an external AI model for realistic conversations.
 
-- **Enhanced Character Interactions**: Utilize an external AI model to create more dynamic and engaging character interactions.
-- **Easy Server Setup**: Streamlined Node.js server for managing API requests seamlessly.
-- **Efficient Prompt Structuring**: Gather and send comprehensive pawn information, including mood, health, personality, relationships, environment, needs, and backstory, to the AI model.
+## Disclaimer
+This is an early build of LivingRim and is prone to issues. Please report any bugs or problems you encounter.
 
-## Prerequisites
-
-- **RimWorld**: Ensure you have RimWorld installed from [RimWorld](https://rimworldgame.com/).
-- **Node.js**: Install the latest version from [Node.js](https://nodejs.org/).
-- **API Key**: Obtain an API key from the external AI service you are using (e.g., OpenRouter).
+## Requirements
+- RimWorld (any version that supports the required mods).
+- The following RimWorld mods:
+  - [Harmony](https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077)
+- Node.js (for running the custom server).
+- Cohere API key.
 
 ## Installation
 
-### Step 1: Clone the Repository
+### Step 1: Download and Install Required Mods
+1. Install the required RimWorld mods:
+   - [Harmony](https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077)
 
-Clone this repository to your local machine:
+### Step 2: Obtain a Cohere API Key
+1. Visit the [Cohere website](https://cohere.com/).
+2. Sign up for a free trial account.
+3. Once you have created an account, navigate to the API Keys section in your Cohere dashboard.
+4. Generate a new API key and copy it. This will be used in the next steps.
 
-```bash
-git clone https://github.com/Ratstopher/LivingRim.git
-cd LivingRim
-```
+### Step 3: Setup the Server
 
-### Step 2: Install Dependencies
+#### Windows
+1. Clone or download the LivingRim repository.
+2. Open a terminal and navigate to the `LivingRim` directory.
+3. Run the `install_server.bat` script to install the required Node.js packages:
+   ```sh
+   install_server.bat
+   ```
+4. Create a `.env` file in the `LivingRim/Servers` directory with the following content:
+   ```plaintext
+   COHERE_API_KEY=your_cohere_api_key_here
+   PORT=3000
+   ```
+   Replace `your_cohere_api_key_here` with your actual Cohere API key.
 
-Install the necessary npm packages by running the `install_server.bat` script:
+5. Start the server by running:
+   ```sh
+   start_server.bat
+   ```
 
-```bash
-install_server.bat
-```
+#### Linux
+1. Clone or download the LivingRim repository.
+2. Open a terminal and navigate to the `LivingRim/Servers` directory.
+3. Run the following command to install the required Node.js packages:
+   ```sh
+   npm install
+   ```
+4. Create a `.env` file in the `LivingRim/Servers` directory with the following content:
+   ```plaintext
+   COHERE_API_KEY=your_cohere_api_key_here
+   PORT=3000
+   ```
+   Replace `your_cohere_api_key_here` with your actual Cohere API key.
 
-Alternatively, you can run the following command manually:
+5. Start the server by running:
+   ```sh
+   npm start
+   ```
 
-```bash
-npm install
-```
+### Step 4: Install the Mod in RimWorld
 
-### Step 3: Set Up Environment Variables
+1. Move the `LivingRim` folder to your RimWorld Mods directory. The path typically looks like this:
+   - **Windows**: `D:\Games\Steam\steamapps\common\RimWorld\Mods`
+   - **Linux**: `/path/to/your/RimWorld/Mods` (replace with your actual RimWorld installation path)
 
-Create a `.env` file in the project root directory and add your OpenRouter API key:
+2. Launch RimWorld and enable the LivingRim mod along with the required mods from the mod menu.
 
-```plaintext
-OPENROUTER_API_KEY=your-api-key-here
-```
-
-### Step 4: Start the Server
-
-Start the server using the `start_server.bat` script:
-
-```bash
-start_server.bat
-```
-
-Alternatively, you can run the following command manually:
-
-```bash
-node server.mjs
-```
+### Step 5: Configure and Play
+1. Start a new game or load an existing game.
+2. Interact with characters to experience enhanced dialog and interactions.
 
 ## Usage
 
-### Interacting with Pawns
+### Customizing Character Personas
+You can customize the personas and descriptions of characters using the mod's in-game interface. The data is saved and loaded automatically.
 
-Once the server is running, you can interact with pawns in-game through the new chat interface. To initiate a conversation, select a pawn and click the "Talk" button. Type your message and receive dynamic responses based on the pawn's context.
+### Server Logs
+The server logs interactions and errors to `logs/server.log`. Check this file if you encounter issues.
 
-### Pawn Information
-
-The mod gathers and sends comprehensive information about pawns to the AI model, including:
-- **Mood**
-- **Health**
-- **Personality**
-- **Relationships**
-- **Environment**
-- **Needs**
-- **Backstory**
-
-## Development
-
-### Project Structure
-
-- **server.mjs**: Main server file that handles API requests and database operations.
-- **CharacterContext.cs**: Manages character context, interactions, and logs.
-- **Dialog_Input.cs**: Handles the chat interface for user input and responses.
-- **Dialog_ConversationDetails.cs**: Displays detailed conversation logs.
-- **MainTabWindow_ChatLog.cs**: Main window for viewing chat logs.
-- **LLMservice.cs**: Handles communication with the language model API.
-- **Main.cs**: Initializes the mod using Harmony patches.
-- **CharacterDetails.cs**: Defines the structure for character details.
-
-### Running Locally
-
-To run the server locally, follow the installation steps and use the provided batch scripts. Ensure you have the required environment variables set up.
-
-### Planned Features
-
-- **UI Improvements**: Enhancing the user interface for better interaction.
-- **Mod Support Testing**: Ensuring compatibility with other mods.
-- **More API Support**: Including local and horde LLM integration such as KoboldCPP, Oobabooga, and Kobold Horde.
-- **Automated LLM Prompting**: Triggering LLM prompts based on character events.
-- **LLM Simulated Conversations**: Facilitating conversations between two pawns using the LLM.
-- **ChromaDB Support**: Enhancing contextual memory with ChromaDB.
-- **More Prompt Categories**: Pulling additional prompt categories from pawns for richer interactions.
-
-### Contributing
-
-We welcome contributions to the LivingRim project! To contribute, please follow these steps:
-
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature-branch`).
-3. Make your changes.
-4. Commit your changes (`git commit -m 'Add some feature'`).
-5. Push to the branch (`git push origin feature-branch`).
-6. Open a Pull Request.
+### Saving and Loading Data
+The mod saves data in the `data` folder within the `Servers` directory. Ensure this folder is writable by the game and server.
 
 ## Troubleshooting
+- **Mod Not Loading**: Ensure all required mods are installed and enabled.
+- **Server Errors**: Check the server logs for detailed error messages.
+- **Missing Data**: Ensure the `data` folder exists and is writable.
 
-If you encounter issues, please check the following:
-
-- Ensure all dependencies are installed correctly.
-- Verify that your environment variables are set up properly.
-- Check the console output for error messages and stack traces.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Acknowledgements
-
-- [RimWorld](https://rimworldgame.com/) by Ludeon Studios
-- [Harmony](https://harmony.pardeike.net/) by Andreas Pardeike
-- [Node.js](https://nodejs.org/)
-- [OpenRouter](https://openrouter.ai/)
+## Contribution
+Feel free to fork this repository, submit issues, and contribute to the development of this mod.
 
 ## Contact
 
-For questions or support, please open an issue on our [GitHub repository](https://github.com/Ratstopher/LivingRim/issues) or join our development Discord server (coming soon).
+Please post any issues here to Github, or contact me at: ratstopher@proton.me
 
+## License
+This project is licensed under the MIT License.
+
+---
+
+**Enjoy a more immersive RimWorld experience with LivingRim!**
+```
+
+### install_server.bat
+```bat
+@echo off
+echo Installing server dependencies...
+cd Servers
+npm install
+echo Installation complete.
+pause
+```
+
+### start_server.bat
+```bat
+@echo off
+echo Starting Node.js server...
+cd Servers
+npm start
+pause
+```
+
+This `README.md` now includes the disclaimer and detailed steps on obtaining a Cohere trial key, as well as the batch files for setting up and starting the server on Windows.

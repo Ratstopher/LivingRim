@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using UnityEngine;
 using Verse;
-using RimWorld;
 using System.Collections;
 using UnityEngine.Networking;
 
@@ -18,8 +16,9 @@ namespace LivingRim
             var requestContent = new
             {
                 characterId = characterId,
-                interactions = interactions, // Ensure this is an array
-                details = details
+                interactions = interactions,
+                details = details,
+                timestamp = DateTime.Now.ToString("o")
             };
 
             string requestContentJson = new JsonFx.Json.JsonWriter().Write(requestContent);
@@ -30,7 +29,6 @@ namespace LivingRim
 
             CoroutineHelper.Instance.StartCoroutine(SendRequest(url, requestContentJson, callback));
         }
-
 
         private static IEnumerator SendRequest(string url, string requestContent, Action<string> callback)
         {

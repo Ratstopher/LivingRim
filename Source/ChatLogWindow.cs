@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Verse;
@@ -12,36 +11,75 @@ namespace LivingRim
         private List<ChatLogEntry> chatLogEntries;
         private int currentLogIndex = 0;
         private Vector2 scrollPosition = Vector2.zero;
+        private bool isLoading = true;
 
         public ChatLogWindow(Pawn pawn, List<ChatLogEntry> chatLogEntries)
         {
+            Log.Message("Initializing ChatLogWindow...");
             this.pawn = pawn;
             this.chatLogEntries = chatLogEntries ?? new List<ChatLogEntry>();
+            this.forcePause = LivingRimMod.settings.pauseOnDialogOpen;
+            this.absorbInputAroundWindow = false;
             this.doCloseX = true;
-            this.forcePause = true;
-            this.absorbInputAroundWindow = true;
+            this.draggable = true;
+            this.resizeable = true;
+            
+
+            if (this.chatLogEntries.Count == 0)
+            {
+                FetchChatLogs();
+            }
+            else
+            {
+                isLoading = false;
+            }
+
+            Log.Message($"ChatLogWindow initialized with {this.chatLogEntries.Count} entries");
         }
 
         public override Vector2 InitialSize => new Vector2(600f, 500f);
 
+        private void FetchChatLogs()
+        {
+            LongEventHandler.QueueLongEvent(() =>
+            {
+                CoroutineHelper.Instance.StartCoroutine(ChatLogFetcher.FetchAndShowLogs(pawn.ThingID.ToString(), SetChatLogs));
+            }, "Fetching chat logs", false, null);
+        }
+
+        private void SetChatLogs(List<ChatLogEntry> logEntries)
+        {
+            chatLogEntries = logEntries;
+            isLoading = false;
+        }
+
         public override void DoWindowContents(Rect inRect)
         {
+            if (isLoading)
+            {
+                Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, 30f), "Loading chat logs...");
+                return;
+            }
+
+            if (chatLogEntries.Count == 0)
+            {
+                Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, 30f), "No chat logs available.");
+                return;
+            }
+
             float headerHeight = 30f;
             float buttonHeight = 30f;
             float spacing = 10f;
 
-            // Header
             Text.Font = GameFont.Medium;
-            string headerText = $"{pawn.Name.ToStringShort} - {DateTime.Now.ToString("M/d/yyyy h:mm tt")}";
+            string headerText = $"{pawn.Name.ToStringShort} - {chatLogEntries[currentLogIndex].Timestamp}";
             Widgets.Label(new Rect(0f, 0f, inRect.width, headerHeight), headerText);
 
-            // Response display box
             float responseBoxY = headerHeight + spacing;
             float responseBoxHeight = inRect.height - responseBoxY - buttonHeight - 2 * spacing;
             Rect responseBoxRect = new Rect(inRect.x, responseBoxY, inRect.width, responseBoxHeight);
             Widgets.DrawBoxSolid(responseBoxRect, Color.black);
 
-            // Scrollable area inside the response box
             Rect scrollViewRect = new Rect(responseBoxRect.x + 10f, responseBoxRect.y + 10f, responseBoxRect.width - 20f, responseBoxRect.height - 20f);
             Widgets.BeginScrollView(scrollViewRect, ref scrollPosition, new Rect(0f, 0f, scrollViewRect.width - 16f, scrollViewRect.height));
             float y = 0f;
@@ -55,7 +93,6 @@ namespace LivingRim
 
             Widgets.EndScrollView();
 
-            // Navigation buttons
             float buttonAreaY = inRect.height - buttonHeight;
             float buttonWidth = 60f;
             float centerX = inRect.width / 2;
@@ -63,22 +100,25 @@ namespace LivingRim
             Rect prevButtonRect = new Rect(centerX - buttonWidth - 30f, buttonAreaY, buttonWidth, buttonHeight);
             if (Widgets.ButtonText(prevButtonRect, "<") && currentLogIndex > 0)
             {
+                Log.Message("Previous button clicked");
                 currentLogIndex--;
-                scrollPosition = Vector2.zero; // Reset scroll position
+                scrollPosition = Vector2.zero;
+                Log.Message($"Current log index: {currentLogIndex}");
             }
 
             Rect backButtonRect = new Rect(centerX - buttonWidth / 2, buttonAreaY, buttonWidth, buttonHeight);
             if (Widgets.ButtonText(backButtonRect, "Back"))
             {
-                Find.WindowStack.Add(new Dialog_Input(pawn, message => { }));
                 Close();
             }
 
             Rect nextButtonRect = new Rect(centerX + 30f, buttonAreaY, buttonWidth, buttonHeight);
             if (Widgets.ButtonText(nextButtonRect, ">") && currentLogIndex < chatLogEntries.Count - 1)
             {
+                Log.Message("Next button clicked");
                 currentLogIndex++;
-                scrollPosition = Vector2.zero; // Reset scroll position
+                scrollPosition = Vector2.zero;
+                Log.Message($"Current log index: {currentLogIndex}");
             }
         }
 
@@ -100,14 +140,5 @@ namespace LivingRim
 
             GUI.color = Color.white;
         }
-    }
-
-    public class ChatLogEntry
-    {
-        public string CharacterId { get; set; }
-        public string Name { get; set; }
-        public string Interaction { get; set; }
-        public string Content { get; set; }
-        public string Timestamp { get; set; }
     }
 }

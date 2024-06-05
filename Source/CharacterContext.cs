@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using Verse;
 using RimWorld;
-using JsonFx.Json;
+
 
 namespace LivingRim
 {
@@ -29,6 +29,8 @@ namespace LivingRim
                 ageChronologicalYears = pawn.ageTracker?.AgeChronologicalYears.ToString() ?? "Unknown",
                 mood = pawn.needs?.mood?.CurLevel.ToString() ?? "Unknown",
                 health = pawn.health?.summaryHealth?.SummaryHealthPercent.ToString() ?? "Unknown",
+                hediffs = GetPawnHediffs(pawn),
+                capacities = GetPawnCapacities(pawn),
                 personality = GetPersonalityTraits(pawn),
                 relationships = GetRelationships(pawn),
                 environment = GetEnvironmentDetails(pawn),
@@ -40,32 +42,13 @@ namespace LivingRim
                 inventory = GetPawnInventory(pawn),
                 recentEvents = GetPawnRecentEvents(pawn),
                 persona = persona,
-                description = description
+                description = description,
+                pronoun = GetPawnPronouns(pawn)
             };
 
-            // Log any fields that are still "Unknown" or null
             LogMissingFields(details);
 
             return details;
-        }
-
-        public static void SaveCharacterDetails(CharacterDetails details)
-        {
-            string path = Path.Combine(GenFilePaths.SaveDataFolderPath, $"{details.characterId}_details.json");
-            string json = new JsonWriter().Write(details);
-            File.WriteAllText(path, json);
-            Log.Message($"Character details saved to {path}");
-        }
-
-        public static CharacterDetails LoadCharacterDetails(string characterId)
-        {
-            string path = Path.Combine(GenFilePaths.SaveDataFolderPath, $"{characterId}_details.json");
-            if (File.Exists(path))
-            {
-                string json = File.ReadAllText(path);
-                return new JsonReader().Read<CharacterDetails>(json);
-            }
-            return null;
         }
 
         private static void LogMissingFields(CharacterDetails details)
@@ -78,6 +61,30 @@ namespace LivingRim
                     Log.Warning($"Character {details.characterId} - Missing or unknown field: {prop.Name}");
                 }
             }
+        }
+
+        private static List<string> GetPawnHediffs(Pawn pawn)
+        {
+            return pawn.health?.hediffSet?.hediffs.Select(h => h.def.label).ToList() ?? new List<string>();
+        }
+
+        private static List<string> GetPawnCapacities(Pawn pawn)
+        {
+            var capacities = new List<string>();
+            if (pawn.health != null && pawn.health.capacities != null)
+            {
+                foreach (var capacity in DefDatabase<PawnCapacityDef>.AllDefsListForReading)
+                {
+                    float efficiency = pawn.health.capacities.GetLevel(capacity);
+                    capacities.Add($"{capacity.label}: {efficiency.ToString("P0")}");
+                }
+            }
+            return capacities;
+        }
+
+        private static List<string> GetPawnPronouns(Pawn pawn)
+        {
+            return new List<string> { pawn.gender.GetPronoun(), pawn.gender.GetPossessive(), pawn.gender.GetObjective() };
         }
 
         private static string GetPersonalityTraits(Pawn pawn)

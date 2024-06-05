@@ -11,7 +11,7 @@ namespace LivingRim
     {
         static Main()
         {
-            var harmony = new Harmony("com.LivingRim.rimworldmod");
+            var harmony = new Harmony("com.Ratstopher.LivingRim");
             harmony.PatchAll();
         }
     }
